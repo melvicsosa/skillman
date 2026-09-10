@@ -1,49 +1,89 @@
 :root {
-  --bg: #f6f6f3;
-  --surface: #ffffff;
-  --surface-2: #efefeb;
-  --ink: #1c1c1a;
-  --ink-muted: #6b6b66;
-  --ink-faint: #a0a099;
-  --line: #e2e1dc;
-  --line-strong: #c9c8c1;
-  --accent: #2f6f4f;
-  --accent-ink: #ffffff;
-  --accent-soft: #e3efe8;
-  --warn: #9a6b12;
-  --warn-soft: #f6ecd6;
-  --danger: #b42318;
-  --danger-soft: #f8e1de;
-  --info-soft: #e6ecf5;
-  --info: #3b5b8a;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
+  /* Dark is the default palette; light overrides it below. */
+  --bg: #131312;
+  --surface: #1c1c1a;
+  --surface-2: #242421;
+  --surface-raised: #232321;
+  --ink: #ebebe5;
+  --ink-muted: #a3a39b;
+  --ink-faint: #7a7a72;
+  --line: #2b2b28;
+  --line-strong: #3d3d39;
+  --accent: #6fbf94;
+  --accent-ink: #0f1f17;
+  --accent-soft: #1c2f25;
+  --warn: #d9a441;
+  --warn-soft: #2f2712;
+  --danger: #e5675c;
+  --danger-soft: #3a1c19;
+  --info-soft: #1d2634;
+  --info: #8fb0e0;
+  --toggle-knob: #ffffff;
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --focus-ring: #6fbf94;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.4);
   --radius: 6px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --sidebar-w: 248px;
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131312;
-    --surface: #1c1c1a;
-    --surface-2: #242421;
-    --ink: #ebebe5;
-    --ink-muted: #9c9c94;
-    --ink-faint: #6b6b64;
-    --line: #2b2b28;
-    --line-strong: #3d3d39;
-    --accent: #6fbf94;
-    --accent-ink: #0f1f17;
-    --accent-soft: #1c2f25;
-    --warn: #d9a441;
-    --warn-soft: #2f2712;
-    --danger: #e5675c;
-    --danger-soft: #3a1c19;
-    --info-soft: #1d2634;
-    --info: #8fb0e0;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+/* Light palette: used when chosen explicitly, or when the OS prefers light
+ * and no explicit dark choice was stored (index.html sets data-theme early). */
+:root[data-theme='light'] {
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --surface-2: #efefeb;
+  --surface-raised: #ffffff;
+  --ink: #1c1c1a;
+  --ink-muted: #5c5c57;
+  --ink-faint: #74746d;
+  --line: #e2e1dc;
+  --line-strong: #c9c8c1;
+  --accent: #2b6a4a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3efe8;
+  --warn: #8a5d0c;
+  --warn-soft: #f6ecd6;
+  --danger: #b42318;
+  --danger-soft: #f8e1de;
+  --info-soft: #e6ecf5;
+  --info: #35547f;
+  --toggle-knob: #ffffff;
+  --backdrop: rgba(20, 20, 18, 0.35);
+  --focus-ring: #2b6a4a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #f6f6f3;
+    --surface: #ffffff;
+    --surface-2: #efefeb;
+    --surface-raised: #ffffff;
+    --ink: #1c1c1a;
+    --ink-muted: #5c5c57;
+    --ink-faint: #74746d;
+    --line: #e2e1dc;
+    --line-strong: #c9c8c1;
+    --accent: #2b6a4a;
+    --accent-ink: #ffffff;
+    --accent-soft: #e3efe8;
+    --warn: #8a5d0c;
+    --warn-soft: #f6ecd6;
+    --danger: #b42318;
+    --danger-soft: #f8e1de;
+    --info-soft: #e6ecf5;
+    --info: #35547f;
+    --backdrop: rgba(20, 20, 18, 0.35);
+    --focus-ring: #2b6a4a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
+    --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.12);
+    color-scheme: light;
   }
 }
 
@@ -78,8 +118,12 @@ button {
   color: inherit;
 }
 
+:focus {
+  outline: none;
+}
+
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -326,15 +370,6 @@ button {
   color: var(--ink-muted);
 }
 
-.select {
-  padding: 6px 28px 6px 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  max-width: 320px;
-}
 
 .toggle {
   --w: 30px;
@@ -359,7 +394,7 @@ button {
   width: calc(var(--h) - 4px);
   height: calc(var(--h) - 4px);
   border-radius: 50%;
-  background: #fff;
+  background: var(--toggle-knob);
   transition: transform 120ms ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
@@ -575,6 +610,30 @@ button {
   color: var(--ink);
   font-weight: 600;
   font-size: 14px;
+}
+
+.state-box.is-empty {
+  padding: 48px 24px;
+}
+
+.state-box.is-empty h3 {
+  margin-bottom: 8px;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.state-box.is-empty p {
+  max-width: 56ch;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.state-icon {
+  display: block;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  object-fit: contain;
 }
 
 .state-box p {
@@ -958,7 +1017,7 @@ button {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1324,4 +1383,271 @@ button {
 
 .drift-action .select {
   min-width: 120px;
+}
+
+/* Custom select ------------------------------------------------------ */
+
+.select {
+  position: relative;
+  display: inline-flex;
+  max-width: 320px;
+  min-width: 0;
+}
+
+.select.is-block {
+  display: flex;
+  max-width: none;
+  width: 100%;
+}
+
+.select.is-project {
+  max-width: 280px;
+}
+
+.select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-trigger:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.select-trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.select.is-open .select-trigger {
+  border-color: var(--ink-faint);
+}
+
+.select-value,
+.select-option-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-hint {
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.select-chevron {
+  flex: none;
+  color: var(--ink-faint);
+  transition: transform 120ms ease;
+}
+
+.select.is-open .select-chevron {
+  transform: rotate(180deg);
+}
+
+.select-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  min-width: 100%;
+  max-width: min(480px, 90vw);
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  outline: none;
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.select-option.is-active {
+  background: var(--surface-2);
+}
+
+.select-option.is-selected {
+  font-weight: 500;
+}
+
+.select-check {
+  display: inline-flex;
+  width: 14px;
+  flex: none;
+  color: var(--accent);
+}
+
+/* Icons -------------------------------------------------------------- */
+
+.icon {
+  flex: none;
+  display: block;
+}
+
+.nav-icon {
+  color: var(--ink-muted);
+  margin-left: -2px;
+}
+
+.agent-item.is-selected .nav-icon {
+  color: var(--ink);
+}
+
+.btn.is-icon {
+  padding: 6px;
+  color: var(--ink-muted);
+}
+
+.btn.is-icon:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  flex: none;
+}
+
+.icon-btn:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Project popover ------------------------------------------------------ */
+
+.popover-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: min(420px, 90vw);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+}
+
+.popover .alert {
+  margin: 0;
+}
+
+.popover-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popover-form .input {
+  min-width: 0;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.popover-section {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.popover-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  min-height: 32px;
+}
+
+.project-row + .project-row {
+  border-top: 1px solid var(--line);
+}
+
+.project-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.project-row-name {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.project-row-root {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-row .inline-confirm {
+  justify-content: flex-start;
 }

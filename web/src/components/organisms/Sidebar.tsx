@@ -1,4 +1,5 @@
 import type { Agent } from '../../api/client'
+import { Icon, type IconName } from '../atoms/Icon'
 import { AgentItem } from '../molecules/AgentItem'
 
 export const ALL_AGENTS = 'all'
@@ -43,9 +44,9 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
       </ul>
       <div className="sidebar-label">Library</div>
       <ul className="agent-list">
-        <NavItem id={VIEW_VAULT} label="Vault" count={vaultCount} selected={selected === VIEW_VAULT} onSelect={onSelect} />
-        <NavItem id={VIEW_DISCOVER} label="Discover" selected={selected === VIEW_DISCOVER} onSelect={onSelect} />
-        <NavItem id={VIEW_SETTINGS} label="Settings" selected={selected === VIEW_SETTINGS} onSelect={onSelect} />
+        <NavItem id={VIEW_VAULT} icon="vault" label="Vault" count={vaultCount} selected={selected === VIEW_VAULT} onSelect={onSelect} />
+        <NavItem id={VIEW_DISCOVER} icon="discover" label="Discover" selected={selected === VIEW_DISCOVER} onSelect={onSelect} />
+        <NavItem id={VIEW_SETTINGS} icon="settings" label="Settings" selected={selected === VIEW_SETTINGS} onSelect={onSelect} />
       </ul>
       <div className="sidebar-foot">Disabling an agent hides it from scans. Files are not touched.</div>
     </aside>
@@ -55,12 +56,13 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
 type NavProps = {
   id: string
   label: string
+  icon?: IconName
   count?: number
   selected: boolean
   onSelect: (id: string) => void
 }
 
-function NavItem({ id, label, count, selected, onSelect }: NavProps) {
+function NavItem({ id, label, icon, count, selected, onSelect }: NavProps) {
   return (
     <li
       className={`agent-item${selected ? ' is-selected' : ''}`}
@@ -75,7 +77,10 @@ function NavItem({ id, label, count, selected, onSelect }: NavProps) {
       role="button"
       aria-pressed={selected}
     >
-      <span className="agent-name">{label}</span>
+      <span className="agent-name">
+        {icon && <Icon name={icon} className="nav-icon" />}
+        {label}
+      </span>
       <span className="agent-count">{count ?? ''}</span>
       <span style={{ width: 30 }} aria-hidden="true" />
     </li>

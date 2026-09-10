@@ -5,11 +5,13 @@ import { Alert } from '../components/atoms/Alert'
 import { Button } from '../components/atoms/Button'
 import { SearchInput } from '../components/atoms/SearchInput'
 import { Spinner } from '../components/atoms/Spinner'
+import { Select } from '../components/molecules/Select'
 import { ExportBar } from '../components/organisms/ExportBar'
 import { InstallDialog, type InstallTarget } from '../components/organisms/InstallDialog'
 import { VaultTable } from '../components/organisms/VaultTable'
 import type { ApiState } from '../hooks/useApi'
 import { errMsg, type ToastFn } from '../hooks/useToast'
+import { ThemeToggle } from '../components/molecules/ThemeToggle'
 
 type Props = {
   vault: ApiState<VaultEntry[]>
@@ -198,14 +200,16 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
     <>
       <header className="topbar">
         <SearchInput value={query} onChange={setQuery} placeholder="Filter vault" />
-        <select className="select" aria-label="Scope" value={project ?? ''} onChange={(e) => setProject(e.target.value || null)}>
-          <option value="">Global scope</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.root} title={p.root}>
-              {p.name} — {p.root}
-            </option>
-          ))}
-        </select>
+        <Select
+          ariaLabel="Scope"
+          className="is-project"
+          value={project ?? ''}
+          onChange={(v) => setProject(v || null)}
+          options={[
+            { value: '', label: 'Global scope' },
+            ...projects.map((p) => ({ value: p.root, label: p.name, hint: p.root, title: p.root })),
+          ]}
+        />
         <span className="topbar-spacer" />
         <form
           className="ref-form"
@@ -233,6 +237,7 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
           {syncing ? <Spinner /> : null}
           Sync all
         </Button>
+        <ThemeToggle />
       </header>
       <div className="content">
         {error && <Alert onDismiss={() => setError(null)}>{error}</Alert>}

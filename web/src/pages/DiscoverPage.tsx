@@ -13,11 +13,14 @@ import { Alert } from '../components/atoms/Alert'
 import { Badge } from '../components/atoms/Badge'
 import { SearchInput } from '../components/atoms/SearchInput'
 import { Spinner } from '../components/atoms/Spinner'
+import { Select } from '../components/molecules/Select'
 import { InstallDialog, type InstallTarget } from '../components/organisms/InstallDialog'
 import { RegistryTable } from '../components/organisms/RegistryTable'
 import { useApi } from '../hooks/useApi'
 import { useDebounce } from '../hooks/useDebounce'
 import { errMsg, type ToastFn } from '../hooks/useToast'
+import { ThemeToggle } from '../components/molecules/ThemeToggle'
+import { EmptyState } from '../components/molecules/EmptyState'
 
 type Tab = 'search' | 'trending' | 'curated'
 
@@ -80,12 +83,17 @@ export function DiscoverPage({ agents, projects, vaultNames, toast, onChanged }:
     <>
       <header className="topbar">
         <SearchInput value={query} onChange={setQuery} placeholder="Search skills.sh, GitHub and marketplaces" />
-        <select className="select" aria-label="Source" value={source} onChange={(e) => setSource(e.target.value as RegistrySource)}>
-          <option value="">All sources</option>
-          <option value="skillssh">skills.sh</option>
-          <option value="github">GitHub</option>
-          <option value="marketplace">Marketplace</option>
-        </select>
+        <Select<RegistrySource>
+          ariaLabel="Source"
+          value={source}
+          onChange={setSource}
+          options={[
+            { value: '', label: 'All sources' },
+            { value: 'skillssh', label: 'skills.sh' },
+            { value: 'github', label: 'GitHub' },
+            { value: 'marketplace', label: 'Marketplace' },
+          ]}
+        />
         <div className="tabs" role="tablist" aria-label="Discover">
           {tabs.map((t) => (
             <button
@@ -102,6 +110,7 @@ export function DiscoverPage({ agents, projects, vaultNames, toast, onChanged }:
         </div>
         <span className="topbar-spacer" />
         {searching && <Spinner />}
+        <ThemeToggle />
       </header>
       <div className="content">
         {tab === 'search' && (
@@ -177,9 +186,7 @@ function CuratedTab({ vaultNames, onInstall }: ListProps) {
   if (owners.length === 0) {
     return (
       <div className="table-wrap">
-        <div className="state-box">
-          <h3>No curated skills</h3>
-        </div>
+        <EmptyState title="No curated skills" />
       </div>
     )
   }

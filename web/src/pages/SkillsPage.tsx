@@ -36,12 +36,18 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
 
   const hasUsage = useMemo(() => allSkills.some((s) => s.usageCount > 0), [allSkills])
 
+  // A project removed elsewhere must not leave a stale, invisible filter.
+  const projectFilter = useMemo(
+    () => (selectedProject && (projects.data ?? []).some((p) => p.root === selectedProject) ? selectedProject : null),
+    [selectedProject, projects.data],
+  )
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     const list = allSkills.filter((s) => {
       if (selectedAgent === ALL_AGENTS ? !enabledAgents.has(s.agent) : s.agent !== selectedAgent) return false
       if (scope === 'global' ? s.scope !== 'global' : s.scope === 'global') return false
-      if (scope === 'project' && selectedProject && s.projectRoot !== selectedProject) return false
+      if (scope === 'project' && projectFilter && s.projectRoot !== projectFilter) return false
       if (q && !s.name.toLowerCase().includes(q) && !s.description.toLowerCase().includes(q)) return false
       return true
     })
@@ -50,7 +56,7 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
       list.sort((a, b) => b.usageCount - a.usageCount)
     }
     return list
-  }, [allSkills, selectedAgent, enabledAgents, scope, selectedProject, query, sort])
+  }, [allSkills, selectedAgent, enabledAgents, scope, projectFilter, query, sort])
 
   const flagIndex = useMemo(() => {
     const idx: Record<string, RowFlags> = {}
@@ -98,20 +104,19 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
     }
   }
 
-  const onAddProject = async () => {
-    const root = window.prompt('Absolute path of the project root to register:')
-    if (!root) return
-    setScanning(true)
-    try {
-      const res = await api.addProject(root.trim())
-      toast(`Registered ${res.project.name}`, `${res.scan.found} skills found in ${res.project.root}`)
-      await refreshAll()
-      setSelectedProject(res.project.root)
-    } catch (err) {
-      toast('Could not add project', errMsg(err), 'error')
-    } finally {
-      setScanning(false)
-    }
+  /** Errors propagate so the project popover can show them inline. */
+  const onAddProject = async (root: string) => {
+    const res = await api.addProject(root)
+    toast(`Registered ${res.project.name}`, `${res.scan.found} skills found in ${res.project.root}`)
+    await refreshAll()
+    setSelectedProject(res.project.root)
+  }
+
+  const onRemoveProject = async (project: Project) => {
+    await api.removeProject(project.id)
+    toast(`Removed ${project.name}`, 'Its cached skills were dropped; files on disk are untouched.')
+    if (selectedProject === project.root) setSelectedProject(null)
+    await refreshAll()
   }
 
   const onRepair = async (issue: Issue, from: string) => {
@@ -152,9 +157,10 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
         scope={scope}
         onScope={setScope}
         projects={projects.data ?? []}
-        selectedProject={selectedProject}
+        selectedProject={projectFilter}
         onSelectProject={setSelectedProject}
         onAddProject={onAddProject}
+        onRemoveProject={onRemoveProject}
         sort={sort}
         onSort={setSort}
         sortable={hasUsage}
@@ -179,7 +185,7 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
               <span>
                 <strong>{visible.length}</strong> {visible.length === 1 ? 'skill' : 'skills'}
                 {selectedAgent !== ALL_AGENTS && ` for ${agentNames[selectedAgent] ?? selectedAgent}`}
-                {scope === 'project' && selectedProject && ` in ${selectedProject}`}
+                {scope === 'project' && projectFilter && ` in ${projectFilter}`}
               </span>
               <span>{visible.filter((s) => s.state === 'disabled').length} disabled</span>
             </p>
@@ -218,6 +224,6 @@ function emptyTitle(total: number, scope: ScopeTab, projectCount: number, query:
 function emptyHint(total: number, scope: ScopeTab, projectCount: number, query: string): string {
   if (total === 0) return 'Run a scan to discover the skills installed for each agent.'
   if (query) return 'Try a different search or clear it.'
-  if (scope === 'project' && projectCount === 0) return 'Use the project dropdown to add a project root, then its .agents/skills and friends are scanned.'
+  if (scope === 'project' && projectCount === 0) return 'Use Add project to register a project root, then its .agents/skills and friends are scanned.'
   return 'Pick another agent or scope, or run a scan.'
 }

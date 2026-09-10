@@ -2,8 +2,11 @@ import type { Project } from '../../api/client'
 import { Button } from '../atoms/Button'
 import { SearchInput } from '../atoms/SearchInput'
 import { Spinner } from '../atoms/Spinner'
+import { ProjectManager } from '../molecules/ProjectManager'
 import { ProjectPicker } from '../molecules/ProjectPicker'
 import { ScopeTabs, type ScopeTab } from '../molecules/ScopeTabs'
+import { Select } from '../molecules/Select'
+import { ThemeToggle } from '../molecules/ThemeToggle'
 
 export type SkillSort = 'name' | 'used'
 
@@ -15,7 +18,8 @@ type Props = {
   projects: Project[]
   selectedProject: string | null
   onSelectProject: (root: string | null) => void
-  onAddProject: () => void
+  onAddProject: (root: string) => Promise<void>
+  onRemoveProject: (project: Project) => Promise<void>
   sort: SkillSort
   onSort: (s: SkillSort) => void
   /** Hide the sort control when no skill carries usage telemetry. */
@@ -30,20 +34,24 @@ export function TopBar(p: Props) {
       <SearchInput value={p.query} onChange={p.onQuery} />
       <ScopeTabs value={p.scope} onChange={p.onScope} />
       {p.scope === 'project' && (
-        <ProjectPicker
-          projects={p.projects}
-          selected={p.selectedProject}
-          onSelect={p.onSelectProject}
-          onAdd={p.onAddProject}
-        />
+        <>
+          <ProjectPicker projects={p.projects} selected={p.selectedProject} onSelect={p.onSelectProject} />
+          <ProjectManager projects={p.projects} onAdd={p.onAddProject} onRemove={p.onRemoveProject} />
+        </>
       )}
       {p.sortable && (
-        <select className="select" aria-label="Sort" value={p.sort} onChange={(e) => p.onSort(e.target.value as SkillSort)}>
-          <option value="name">Sort: name</option>
-          <option value="used">Sort: most used</option>
-        </select>
+        <Select<SkillSort>
+          ariaLabel="Sort"
+          value={p.sort}
+          onChange={p.onSort}
+          options={[
+            { value: 'name', label: 'Sort: name' },
+            { value: 'used', label: 'Sort: most used' },
+          ]}
+        />
       )}
       <span className="topbar-spacer" />
+      <ThemeToggle />
       <Button variant="primary" onClick={p.onScan} disabled={p.scanning} aria-busy={p.scanning}>
         {p.scanning ? <Spinner /> : null}
         {p.scanning ? 'Scanning' : 'Scan'}

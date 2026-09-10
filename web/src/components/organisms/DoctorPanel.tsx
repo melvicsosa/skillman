@@ -4,6 +4,7 @@ import type { DoctorReport, DriftCopy, Issue } from '../../api/client'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
 import { Spinner } from '../atoms/Spinner'
+import { Select } from '../molecules/Select'
 
 type Props = {
   report: DoctorReport | null
@@ -151,15 +152,15 @@ function DriftActions({ issue, onRepair, onAdopt }: ItemProps) {
   const canRepair = issue.repairable !== false && sources.length > 0
   return (
     <div className="drift-actions">
-      <label className="drift-action">
+      <div className="drift-action">
         <span>Repair from</span>
-        <select className="select" value={from} onChange={(e) => setFrom(e.target.value)} disabled={busy !== null || !canRepair}>
-          {sources.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <Select
+          ariaLabel="Repair from"
+          value={from}
+          onChange={setFrom}
+          disabled={busy !== null || !canRepair}
+          options={sources.map((s) => ({ value: s, label: s }))}
+        />
         <Button
           variant="ghost"
           onClick={() => void run('repair', () => onRepair(issue, from))}
@@ -170,17 +171,17 @@ function DriftActions({ issue, onRepair, onAdopt }: ItemProps) {
           {busy === 'repair' ? <Spinner /> : null}
           Repair
         </Button>
-      </label>
+      </div>
       {!issue.vaultRef && agents.length > 0 && (
-        <label className="drift-action">
+        <div className="drift-action">
           <span>Adopt into vault from</span>
-          <select className="select" value={adoptFrom} onChange={(e) => setAdoptFrom(e.target.value)} disabled={busy !== null}>
-            {agents.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Adopt into vault from"
+            value={adoptFrom}
+            onChange={setAdoptFrom}
+            disabled={busy !== null}
+            options={agents.map((a) => ({ value: a, label: a }))}
+          />
           <Button
             variant="ghost"
             onClick={() => void run('adopt', () => onAdopt(issue, adoptFrom))}
@@ -191,7 +192,7 @@ function DriftActions({ issue, onRepair, onAdopt }: ItemProps) {
             {busy === 'adopt' ? <Spinner /> : null}
             Adopt
           </Button>
-        </label>
+        </div>
       )}
     </div>
   )

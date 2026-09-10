@@ -6,6 +6,7 @@ import { ServiceCard } from '../components/organisms/ServiceCard'
 import { SettingsForm } from '../components/organisms/SettingsForm'
 import { useApi } from '../hooks/useApi'
 import { errMsg, type ToastFn } from '../hooks/useToast'
+import { ThemeToggle } from '../components/molecules/ThemeToggle'
 
 type Props = {
   toast: ToastFn
@@ -88,6 +89,7 @@ export function SettingsPage({ toast }: Props) {
             Data dir: <code>{settings.data.dataDir}</code>
           </span>
         )}
+        <ThemeToggle />
       </header>
       <div className="content settings">
         {notice && (

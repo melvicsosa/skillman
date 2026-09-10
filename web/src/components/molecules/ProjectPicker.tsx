@@ -1,36 +1,26 @@
 import type { Project } from '../../api/client'
-
-const ADD = '__add__'
+import { Select } from './Select'
 
 type Props = {
   projects: Project[]
+  /** Selected project root, or null for all projects. */
   selected: string | null
   onSelect: (root: string | null) => void
-  onAdd: () => void
 }
 
-export function ProjectPicker({ projects, selected, onSelect, onAdd }: Props) {
+/** Project filter: "All projects" plus every registered project (by root). */
+export function ProjectPicker({ projects, selected, onSelect }: Props) {
+  const options = [
+    { value: '', label: `All projects${projects.length ? ` (${projects.length})` : ''}` },
+    ...projects.map((p) => ({ value: p.root, label: p.name, hint: p.root, title: p.root })),
+  ]
   return (
-    <select
-      className="select"
-      aria-label="Project"
+    <Select
+      ariaLabel="Project"
+      className="is-project"
       value={selected ?? ''}
-      onChange={(e) => {
-        const v = e.target.value
-        if (v === ADD) {
-          onAdd()
-          return
-        }
-        onSelect(v === '' ? null : v)
-      }}
-    >
-      <option value="">All projects{projects.length ? ` (${projects.length})` : ''}</option>
-      {projects.map((p) => (
-        <option key={p.id} value={p.root} title={p.root}>
-          {p.name} — {p.root}
-        </option>
-      ))}
-      <option value={ADD}>Add project…</option>
-    </select>
+      options={options}
+      onChange={(v) => onSelect(v === '' ? null : v)}
+    />
   )
 }

@@ -5,6 +5,7 @@ import { Alert } from '../atoms/Alert'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
 import { Spinner } from '../atoms/Spinner'
+import { Select } from '../molecules/Select'
 
 export type InstallTarget = {
   /** Ref passed to POST /api/registry/add. */
@@ -99,17 +100,20 @@ export function InstallDialog({ target, agents, projects, onSubmit, onClose }: P
                 ))}
               </div>
             </fieldset>
-            <label className="field">
-              <span>Scope</span>
-              <select className="select" value={project} onChange={(e) => setProject(e.target.value)} disabled={busy}>
-                <option value="">Global</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.root}>
-                    {p.name} — {p.root}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="field">
+              <span id="install-scope-label">Scope</span>
+              <Select
+                block
+                labelledBy="install-scope-label"
+                value={project}
+                onChange={setProject}
+                disabled={busy}
+                options={[
+                  { value: '', label: 'Global' },
+                  ...projects.map((p) => ({ value: p.root, label: p.name, hint: p.root, title: p.root })),
+                ]}
+              />
+            </div>
             <label className="check">
               <input type="checkbox" checked={copy} onChange={(e) => setCopy(e.target.checked)} disabled={busy} />
               Copy files instead of symlinking

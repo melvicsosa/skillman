@@ -1,6 +1,7 @@
 import type { Agent, VaultEntry } from '../../api/client'
 import { Checkbox } from '../atoms/Checkbox'
 import { VaultRow } from '../molecules/VaultRow'
+import { EmptyState } from '../molecules/EmptyState'
 
 type Props = {
   entries: VaultEntry[]
@@ -36,10 +37,10 @@ export function VaultTable({
   if (entries.length === 0) {
     return (
       <div className="table-wrap">
-        <div className="state-box">
-          <h3>The vault is empty</h3>
-          <p>Add a skill by ref above, import your lock file, or install one from Discover.</p>
-        </div>
+        <EmptyState
+          title="The vault is empty"
+          hint="Add a skill by ref above, import your lock file, or install one from Discover."
+        />
       </div>
     )
   }

@@ -1,5 +1,6 @@
 import type { RegistryResult } from '../../api/client'
 import { RegistryRow } from '../molecules/RegistryRow'
+import { EmptyState } from '../molecules/EmptyState'
 
 type Props = {
   hits: RegistryResult[]
@@ -13,10 +14,7 @@ export function RegistryTable({ hits, vaultNames, onInstall, emptyTitle, emptyHi
   if (hits.length === 0) {
     return (
       <div className="table-wrap">
-        <div className="state-box">
-          <h3>{emptyTitle}</h3>
-          {emptyHint && <p>{emptyHint}</p>}
-        </div>
+        <EmptyState title={emptyTitle} hint={emptyHint} />
       </div>
     )
   }

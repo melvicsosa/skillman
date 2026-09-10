@@ -1,5 +1,6 @@
 import type { Skill } from '../../api/client'
 import { SkillRow, type RowFlags } from '../molecules/SkillRow'
+import { EmptyState } from '../molecules/EmptyState'
 
 type Props = {
   skills: Skill[]
@@ -18,10 +19,7 @@ export function SkillTable({ skills, agentNames, showAgent, showUsage, flagsFor,
   if (skills.length === 0) {
     return (
       <div className="table-wrap">
-        <div className="state-box">
-          <h3>{emptyTitle}</h3>
-          <p>{emptyHint}</p>
-        </div>
+        <EmptyState title={emptyTitle} hint={emptyHint} />
       </div>
     )
   }
