@@ -48,7 +48,7 @@ builds:
 # Both archive ids share one name_template so the brew formula keeps
 # resolving <project>_<version>_<os>_<arch>.tar.gz.
 archives:
-  - id: darwin
+  - id: default
     ids:
       - skillman
       - skillman-tray
@@ -56,18 +56,8 @@ archives:
       - tar.gz
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    files:
-      - LICENSE
-      - README.md
-    # goreleaser builds every archive from the union of its builds, so the
-    # darwin archive only exists for darwin (skillman-tray has no linux build).
-  - id: linux
-    ids:
-      - skillman
-    formats:
-      - tar.gz
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    # skillman-tray only builds for darwin, so linux archives carry one binary.
+    allow_different_binary_count: true
     files:
       - LICENSE
       - README.md
