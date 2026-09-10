@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-
 	"os"
+	"path/filepath"
 
 	"github.com/melvicsosa/skillman/internal/adapters/agents"
 	"github.com/melvicsosa/skillman/internal/adapters/convert"
@@ -14,17 +14,16 @@ import (
 	"github.com/melvicsosa/skillman/internal/adapters/registry/local"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/skillssh"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/urlsrc"
+	"github.com/melvicsosa/skillman/internal/adapters/service"
 	"github.com/melvicsosa/skillman/internal/adapters/storage/sqlite"
 	"github.com/melvicsosa/skillman/internal/app"
 	"github.com/melvicsosa/skillman/internal/domain"
 )
 
-// Settings keys and environment variables for registry tokens.
+// Environment variables consulted when a registry token setting is empty.
 const (
-	settingGitHubToken   = "github_token"
-	settingSkillsSHToken = "skillssh_token"
-	envGitHubToken       = "GITHUB_TOKEN"
-	envSkillsSHToken     = "SKILLSSH_TOKEN"
+	envGitHubToken   = "GITHUB_TOKEN"
+	envSkillsSHToken = "SKILLSSH_TOKEN"
 )
 
 // env is everything a command needs: the open database and the service.
@@ -45,28 +44,40 @@ func newRuntime(ctx context.Context) (*env, error) {
 		return nil, err
 	}
 	settings := sqlite.NewSettingsRepo(db)
-	gh := github.New(tokenFor(ctx, settings, settingGitHubToken, envGitHubToken))
+	gh := github.New(tokenFor(ctx, settings, app.SettingGitHubToken, envGitHubToken))
 	registries := []domain.Registry{
-		skillssh.New(tokenFor(ctx, settings, settingSkillsSHToken, envSkillsSHToken), gh),
+		skillssh.New(tokenFor(ctx, settings, app.SettingSkillsSHToken, envSkillsSHToken), gh),
 		urlsrc.New(),
 		local.Source{Home: agents.Home},
 		gh,
 	}
 	svc := app.New(app.Deps{
-		Agents:     agents.Source{},
-		AgentRepo:  sqlite.NewAgentRepo(db),
-		Skills:     sqlite.NewSkillRepo(db),
-		Projects:   sqlite.NewProjectRepo(db),
-		Scans:      sqlite.NewScanRepo(db),
-		Inspector:  skillfs.Inspector{},
-		Quarantine: skillfs.Mover{},
-		Vault:      sqlite.NewVaultRepo(db),
-		Settings:   settings,
-		Converter:  convert.Converter{},
-		Registries: registries,
-		DataDir:    dir,
+		Agents:         agents.Source{},
+		AgentRepo:      sqlite.NewAgentRepo(db),
+		Skills:         sqlite.NewSkillRepo(db),
+		Projects:       sqlite.NewProjectRepo(db),
+		Scans:          sqlite.NewScanRepo(db),
+		Inspector:      skillfs.Inspector{},
+		Quarantine:     skillfs.Mover{},
+		Vault:          sqlite.NewVaultRepo(db),
+		Settings:       settings,
+		Converter:      convert.Converter{},
+		Registries:     registries,
+		ServiceManager: service.New(launchAgentsDir(), dir),
+		Usage:          agents.ClaudeUsage{},
+		DataDir:        dir,
 	})
 	return &env{dataDir: dir, db: db, svc: svc}, nil
+}
+
+// launchAgentsDir is ~/Library/LaunchAgents, following SKILLMAN_HOME so
+// isolated runs never touch the real user domain.
+func launchAgentsDir() string {
+	home, err := agents.Home()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, "Library", "LaunchAgents")
 }
 
 // tokenFor reads a token from the settings table, falling back to env.

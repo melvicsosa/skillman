@@ -2,12 +2,15 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/fs"
 	"net/http"
+	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/melvicsosa/skillman/internal/app"
 	"github.com/melvicsosa/skillman/internal/app/version"
@@ -18,7 +21,12 @@ import (
 // Server holds the handlers' dependencies.
 type Server struct {
 	svc *app.Service
+	// restartDelay is how long POST /api/service/restart waits after
+	// answering before asking the service manager to kickstart the job.
+	restartDelay time.Duration
 }
+
+func newBackgroundContext() context.Context { return context.Background() }
 
 // NewHandler builds the root http.Handler: API routes (PLAN.md section 7,
 // Phase 1 subset) plus the SPA.
@@ -27,7 +35,7 @@ func NewHandler(svc *app.Service) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{svc: svc}
+	s := &Server{svc: svc, restartDelay: 300 * time.Millisecond}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", handleHealth)
 	mux.HandleFunc("GET /api/agents", s.handleListAgents)
@@ -50,16 +58,24 @@ func NewHandler(svc *app.Service) (http.Handler, error) {
 	mux.HandleFunc("GET /api/registry/curated", s.handleRegistryCurated)
 	mux.HandleFunc("POST /api/registry/add", s.handleRegistryAdd)
 	mux.HandleFunc("POST /api/import-lock", s.handleImportLock)
+	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
+	mux.HandleFunc("PATCH /api/settings", s.handlePatchSettings)
+	mux.HandleFunc("GET /api/service", s.handleServiceStatus)
+	mux.HandleFunc("POST /api/service/install", s.handleServiceInstall)
+	mux.HandleFunc("POST /api/service/uninstall", s.handleServiceUninstall)
+	mux.HandleFunc("POST /api/service/restart", s.handleServiceRestart)
+	mux.HandleFunc("GET /api/usage", s.handleUsage)
 	mux.Handle("/", spaHandler(dist))
 	return mux, nil
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{
+	writeJSON(w, http.StatusOK, map[string]any{
 		"status":  "ok",
 		"version": version.Version,
 		"commit":  version.Commit,
 		"date":    version.Date,
+		"pid":     os.Getpid(),
 	})
 }
 
@@ -127,7 +143,11 @@ func (s *Server) handleListSkills(w http.ResponseWriter, r *http.Request) {
 		}
 		skills = filtered
 	}
-	writeJSON(w, http.StatusOK, ToSkillViews(skills))
+	views := ToSkillViews(skills)
+	if usage, err := s.svc.Usage(r.Context()); err == nil {
+		ApplyUsage(views, usage.Skills)
+	}
+	writeJSON(w, http.StatusOK, views)
 }
 
 func (s *Server) handleEnableSkill(w http.ResponseWriter, r *http.Request) {

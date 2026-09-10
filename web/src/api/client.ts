@@ -27,6 +27,9 @@ export type Skill = {
   quarantinePath?: string
   readOnly: boolean
   lastSeenAt: string
+  /** Agent-recorded telemetry (Claude Code only); 0 when unknown. */
+  usageCount: number
+  lastUsedAt?: string
 }
 
 export type Project = {
@@ -153,6 +156,46 @@ export type LockImportResult = {
 
 export type RegistrySource = '' | 'skillssh' | 'github'
 
+/** GET/PATCH /api/settings. Tokens are write-only: only their presence comes back. */
+export type Settings = {
+  port: number
+  hasGithubToken: boolean
+  hasSkillsshToken: boolean
+  dataDir: string
+  /** Set by PATCH when the port changed while the service is running. */
+  restartRequired?: boolean
+}
+
+export type SettingsPatch = {
+  port?: number
+  githubToken?: string
+  skillsshToken?: string
+}
+
+/** GET /api/service: platform service state plus what the port answers. */
+export type ServiceInfo = {
+  supported: boolean
+  platform: string
+  label: string
+  installed: boolean
+  running: boolean
+  pid?: number
+  unitPath?: string
+  logDir?: string
+  port: number
+  url: string
+  healthy: boolean
+  serverPid?: number
+  executable?: string
+  dataDir: string
+  underService: boolean
+}
+
+export type UsageReport = {
+  source: string
+  skills: Record<string, { usageCount: number; lastUsedAt: string }>
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -234,4 +277,13 @@ export const api = {
   addRef: (ref: string, body: InstallRequest) =>
     request<AddResult>('/api/registry/add', { method: 'POST', body: JSON.stringify({ ref, ...body }) }),
   importLock: () => request<LockImportResult>('/api/import-lock', { method: 'POST' }),
+  settings: () => request<Settings>('/api/settings'),
+  patchSettings: (body: SettingsPatch) =>
+    request<Settings>('/api/settings', { method: 'PATCH', body: JSON.stringify(body) }),
+  service: () => request<ServiceInfo>('/api/service'),
+  serviceInstall: () => request<ServiceInfo>('/api/service/install', { method: 'POST' }),
+  serviceUninstall: () => request<ServiceInfo>('/api/service/uninstall', { method: 'POST' }),
+  serviceRestart: () =>
+    request<{ restarting: boolean; port: number; url: string }>('/api/service/restart', { method: 'POST' }),
+  usage: () => request<UsageReport>('/api/usage'),
 }

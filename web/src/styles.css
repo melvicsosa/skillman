@@ -1058,3 +1058,150 @@ button {
   flex-wrap: wrap;
   overflow-wrap: anywhere;
 }
+
+/* Brand icon --------------------------------------------------------- */
+
+.brand {
+  align-items: center;
+}
+
+.brand-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex: none;
+}
+
+/* Usage column ------------------------------------------------------- */
+
+.table .col-used {
+  width: 10ch;
+}
+
+.used-badge {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Settings ----------------------------------------------------------- */
+
+.page-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.data-dir {
+  color: var(--ink-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-hint,
+.card-note,
+.card-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.card-note {
+  color: var(--ink);
+}
+
+.card-error {
+  color: var(--danger);
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.field-hint {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.field .badge {
+  text-transform: none;
+  letter-spacing: normal;
+  margin-left: 4px;
+}
+
+.link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.kv dt {
+  color: var(--ink-faint);
+}
+
+.kv dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.kv .path {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.form-grid .input {
+  min-width: 0;
+  width: 100%;
+}

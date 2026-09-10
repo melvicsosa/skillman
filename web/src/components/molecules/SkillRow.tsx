@@ -13,12 +13,13 @@ type Props = {
   skill: Skill
   agentName: string
   showAgent: boolean
+  showUsage: boolean
   flags: RowFlags
   busy: boolean
   onToggle: (enabled: boolean) => void
 }
 
-export function SkillRow({ skill, agentName, showAgent, flags, busy, onToggle }: Props) {
+export function SkillRow({ skill, agentName, showAgent, showUsage, flags, busy, onToggle }: Props) {
   const disabled = skill.state === 'disabled'
   const scope = skill.projectRoot ? basename(skill.projectRoot) : 'global'
   const shownPath = disabled && skill.quarantinePath ? skill.quarantinePath : skill.path
@@ -38,6 +39,11 @@ export function SkillRow({ skill, agentName, showAgent, flags, busy, onToggle }:
       <td className="cell-num">{skill.version || '–'}</td>
       {showAgent && <td>{agentName}</td>}
       <td title={skill.projectRoot ?? 'Global skill directory'}>{scope}</td>
+      {showUsage && (
+        <td className="cell-used" title={skill.lastUsedAt ? `Last used ${new Date(skill.lastUsedAt).toLocaleString()}` : undefined}>
+          {skill.usageCount > 0 ? <span className="used-badge">Used {skill.usageCount}×</span> : null}
+        </td>
+      )}
       <td>
         <div className="cell-badges">
           {skill.isSymlink && <Badge title={`Symlink to ${skill.linkTarget ?? '?'}`}>symlink</Badge>}

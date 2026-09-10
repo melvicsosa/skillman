@@ -6,7 +6,7 @@ import { errMsg, type ToastFn } from '../hooks/useToast'
 import type { ScopeTab } from '../components/molecules/ScopeTabs'
 import type { RowFlags } from '../components/molecules/SkillRow'
 import { ALL_AGENTS } from '../components/organisms/Sidebar'
-import { TopBar } from '../components/organisms/TopBar'
+import { TopBar, type SkillSort } from '../components/organisms/TopBar'
 import { SkillTable } from '../components/organisms/SkillTable'
 import { DoctorPanel } from '../components/organisms/DoctorPanel'
 
@@ -27,22 +27,30 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
   const [query, setQuery] = useState('')
   const [busySkill, setBusySkill] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
+  const [sort, setSort] = useState<SkillSort>('name')
 
   const agentList = useMemo(() => agents.data ?? [], [agents.data])
   const agentNames = useMemo(() => Object.fromEntries(agentList.map((a) => [a.id, a.name])), [agentList])
   const enabledAgents = useMemo(() => new Set(agentList.filter((a) => a.enabled).map((a) => a.id)), [agentList])
   const allSkills = useMemo(() => skills.data ?? [], [skills.data])
 
+  const hasUsage = useMemo(() => allSkills.some((s) => s.usageCount > 0), [allSkills])
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return allSkills.filter((s) => {
+    const list = allSkills.filter((s) => {
       if (selectedAgent === ALL_AGENTS ? !enabledAgents.has(s.agent) : s.agent !== selectedAgent) return false
       if (scope === 'global' ? s.scope !== 'global' : s.scope === 'global') return false
       if (scope === 'project' && selectedProject && s.projectRoot !== selectedProject) return false
       if (q && !s.name.toLowerCase().includes(q) && !s.description.toLowerCase().includes(q)) return false
       return true
     })
-  }, [allSkills, selectedAgent, enabledAgents, scope, selectedProject, query])
+    if (sort === 'used') {
+      // Stable: the API order (by name) breaks ties.
+      list.sort((a, b) => b.usageCount - a.usageCount)
+    }
+    return list
+  }, [allSkills, selectedAgent, enabledAgents, scope, selectedProject, query, sort])
 
   const flagIndex = useMemo(() => {
     const idx: Record<string, RowFlags> = {}
@@ -120,6 +128,9 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
         selectedProject={selectedProject}
         onSelectProject={setSelectedProject}
         onAddProject={onAddProject}
+        sort={sort}
+        onSort={setSort}
+        sortable={hasUsage}
         scanning={scanning}
         onScan={onScan}
       />
@@ -149,6 +160,7 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
               skills={visible}
               agentNames={agentNames}
               showAgent={selectedAgent === ALL_AGENTS}
+              showUsage={hasUsage}
               flagsFor={flagsFor}
               busySkill={busySkill}
               onToggle={onToggleSkill}

@@ -45,7 +45,7 @@ func (f *fixture) open() {
 		Projects: sqlite.NewProjectRepo(db), Scans: sqlite.NewScanRepo(db),
 		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, Vault: sqlite.NewVaultRepo(db),
 		Settings: sqlite.NewSettingsRepo(db), Converter: convert.Converter{}, Registries: []domain.Registry{f.reg},
-		DataDir: f.dataDir,
+		DataDir: f.dataDir, Probe: func(context.Context, int) (bool, int) { return false, 0 },
 	})
 }
 

@@ -21,8 +21,6 @@ import (
 	"github.com/melvicsosa/skillman/internal/domain"
 )
 
-const defaultPort = 3010
-
 var (
 	servePort   int
 	serveNoOpen bool
@@ -35,7 +33,7 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
-	serveCmd.Flags().IntVar(&servePort, "port", defaultPort, "port to listen on")
+	serveCmd.Flags().IntVar(&servePort, "port", 0, "port to listen on (default: the port setting, "+strconv.Itoa(app.DefaultPort)+")")
 	serveCmd.Flags().BoolVar(&serveNoOpen, "no-open", false, "do not open the browser")
 }
 
@@ -66,14 +64,30 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(servePort))
+	port := servePort
+	if !cmd.Flags().Changed("port") {
+		if port, err = rt.svc.Port(ctx); err != nil {
+			return err
+		}
+	} else if err := app.ValidatePort(port); err != nil {
+		return err
+	}
+	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
+		if errors.Is(err, syscall.EADDRINUSE) {
+			return portBusyError(ctx, port, rt.svc.PIDFile())
+		}
 		return fmt.Errorf("listen on %s: %w", addr, err)
 	}
 	srv := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 
-	url := "http://localhost:" + strconv.Itoa(servePort)
+	if err := os.WriteFile(rt.svc.PIDFile(), []byte(strconv.Itoa(os.Getpid())+"\n"), 0o644); err != nil {
+		fmt.Fprintf(cmd.ErrOrStderr(), "could not write pid file: %v\n", err)
+	}
+	defer os.Remove(rt.svc.PIDFile())
+
+	url := "http://localhost:" + strconv.Itoa(port)
 	fmt.Fprintf(cmd.OutOrStdout(), "skillman listening on %s (data dir %s)\n", url, dir)
 
 	errCh := make(chan error, 1)
@@ -96,6 +110,22 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		}
 		return err
 	}
+}
+
+// portBusyError explains who holds the port when it is a skillman server.
+func portBusyError(ctx context.Context, port int, pidFile string) error {
+	healthy, pid := app.ProbeHealth(ctx, port)
+	if pid == 0 {
+		pid = app.ReadPIDFile(pidFile)
+	}
+	if !healthy {
+		return fmt.Errorf("port %d is already in use by another program", port)
+	}
+	who := ""
+	if pid > 0 {
+		who = fmt.Sprintf(" (pid %d)", pid)
+	}
+	return fmt.Errorf("skillman is already running on :%d%s. Use `skillman service status` or open http://localhost:%d", port, who, port)
 }
 
 // openBrowser opens url with the platform default handler.

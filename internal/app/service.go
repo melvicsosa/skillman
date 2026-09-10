@@ -27,6 +27,9 @@ type Service struct {
 	settings   domain.SettingsRepository
 	converter  domain.Converter
 	registries []domain.Registry
+	serviceMgr domain.ServiceManager
+	usage      domain.UsageSource
+	probe      HealthProbe
 	dataDir    string
 }
 
@@ -45,15 +48,25 @@ type Deps struct {
 	// Registries are consulted in order by ResolveRef; the first whose
 	// Matches (see RefMatcher) accepts the ref wins.
 	Registries []domain.Registry
-	DataDir    string
+	// ServiceManager is optional; nil means the platform has no service support.
+	ServiceManager domain.ServiceManager
+	// Usage is optional; nil disables usage telemetry.
+	Usage domain.UsageSource
+	// Probe checks whether a server answers on a port; nil uses ProbeHealth.
+	Probe   HealthProbe
+	DataDir string
 }
 
 // New builds a Service from its dependencies.
 func New(d Deps) *Service {
+	probe := d.Probe
+	if probe == nil {
+		probe = ProbeHealth
+	}
 	return &Service{
 		agents: d.Agents, agentRepo: d.AgentRepo, skills: d.Skills, projects: d.Projects,
 		scans: d.Scans, inspector: d.Inspector, quarantine: d.Quarantine, vault: d.Vault, settings: d.Settings,
-		converter: d.Converter, registries: d.Registries, dataDir: d.DataDir,
+		converter: d.Converter, registries: d.Registries, serviceMgr: d.ServiceManager, usage: d.Usage, probe: probe, dataDir: d.DataDir,
 	}
 }
 

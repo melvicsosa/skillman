@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { api } from './api/client'
 import { ToastArea } from './components/molecules/Toast'
-import { ALL_AGENTS, Sidebar, VIEW_DISCOVER, VIEW_VAULT } from './components/organisms/Sidebar'
+import { ALL_AGENTS, Sidebar, VIEW_DISCOVER, VIEW_SETTINGS, VIEW_VAULT } from './components/organisms/Sidebar'
 import { useApi } from './hooks/useApi'
 import { errMsg, useToast } from './hooks/useToast'
 import { DiscoverPage } from './pages/DiscoverPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { SkillsPage } from './pages/SkillsPage'
 import { VaultPage } from './pages/VaultPage'
 
@@ -61,7 +62,9 @@ function App() {
   }, [agents, skills, projects, doctor, vault])
 
   const view =
-    selected === VIEW_VAULT ? (
+    selected === VIEW_SETTINGS ? (
+      <SettingsPage toast={toast} />
+    ) : selected === VIEW_VAULT ? (
       <VaultPage
         vault={vault}
         agents={agentList}

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -50,21 +51,45 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if listJSON {
-			return writeJSON(cmd.OutOrStdout(), httpadapter.ToSkillViews(skills))
+		views := httpadapter.ToSkillViews(skills)
+		if usage, err := rt.svc.Usage(cmd.Context()); err == nil {
+			httpadapter.ApplyUsage(views, usage.Skills)
 		}
-		if len(skills) == 0 {
+		if listJSON {
+			return writeJSON(cmd.OutOrStdout(), views)
+		}
+		if len(views) == 0 {
 			fmt.Fprintln(cmd.OutOrStdout(), "No skills cached. Run `skillman scan`.")
 			return nil
 		}
-		tw := tabwriter.NewWriter(cmd.OutOrStdout(), 2, 4, 2, ' ', 0)
-		fmt.Fprintln(tw, "NAME\tAGENT\tSCOPE\tSTATE\tVERSION\tDESCRIPTION")
-		for _, s := range skills {
-			scope := "global"
-			if root := s.Scope.ProjectRoot(); root != "" {
-				scope = filepath.Base(root)
+		withUsage := false
+		for _, v := range views {
+			if v.UsageCount > 0 {
+				withUsage = true
+				break
 			}
-			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", s.Name, s.AgentID, scope, s.State, s.Version, truncate(s.Description, 60))
+		}
+		tw := tabwriter.NewWriter(cmd.OutOrStdout(), 2, 4, 2, ' ', 0)
+		used := func(v httpadapter.SkillView) string {
+			if !withUsage {
+				return ""
+			}
+			if v.UsageCount == 0 {
+				return "\t-"
+			}
+			return "\t" + strconv.Itoa(v.UsageCount)
+		}
+		header := "NAME\tAGENT\tSCOPE\tSTATE\tVERSION"
+		if withUsage {
+			header += "\tUSED"
+		}
+		fmt.Fprintln(tw, header+"\tDESCRIPTION")
+		for _, v := range views {
+			scope := "global"
+			if v.ProjectRoot != "" {
+				scope = filepath.Base(v.ProjectRoot)
+			}
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s%s\t%s\n", v.Name, v.Agent, scope, v.State, v.Version, used(v), truncate(v.Description, 60))
 		}
 		return tw.Flush()
 	},

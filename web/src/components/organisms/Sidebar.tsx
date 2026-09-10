@@ -4,6 +4,7 @@ import { AgentItem } from '../molecules/AgentItem'
 export const ALL_AGENTS = 'all'
 export const VIEW_VAULT = 'vault'
 export const VIEW_DISCOVER = 'discover'
+export const VIEW_SETTINGS = 'settings'
 
 type Props = {
   agents: Agent[]
@@ -21,6 +22,7 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
   return (
     <aside className="sidebar">
       <div className="brand">
+        <img className="brand-icon" src="/favicon.png" width={22} height={22} alt="" aria-hidden="true" />
         <span className="brand-name">skillman</span>
         <span className="brand-version">{version}</span>
       </div>
@@ -43,6 +45,7 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
       <ul className="agent-list">
         <NavItem id={VIEW_VAULT} label="Vault" count={vaultCount} selected={selected === VIEW_VAULT} onSelect={onSelect} />
         <NavItem id={VIEW_DISCOVER} label="Discover" selected={selected === VIEW_DISCOVER} onSelect={onSelect} />
+        <NavItem id={VIEW_SETTINGS} label="Settings" selected={selected === VIEW_SETTINGS} onSelect={onSelect} />
       </ul>
       <div className="sidebar-foot">Disabling an agent hides it from scans. Files are not touched.</div>
     </aside>

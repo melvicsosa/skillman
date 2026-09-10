@@ -37,6 +37,10 @@ type SkillView struct {
 	ReadOnly       bool   `json:"readOnly"`
 	VaultRef       string `json:"vaultRef,omitempty"`
 	LastSeenAt     string `json:"lastSeenAt"`
+	// UsageCount and LastUsedAt come from the agent's own telemetry
+	// (Claude Code only); zero when unknown.
+	UsageCount int    `json:"usageCount"`
+	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 
 // ProjectView is the JSON shape of a registered project.
@@ -81,6 +85,20 @@ func ToSkillView(s domain.Skill) SkillView {
 		Path: s.Path, Name: s.Name, Description: s.Description, Version: s.Version, ContentHash: s.ContentHash,
 		IsSymlink: s.IsSymlink, LinkTarget: s.LinkTarget, State: string(s.State), QuarantinePath: s.QuarantinePath,
 		ReadOnly: s.ReadOnly, VaultRef: s.VaultRef, LastSeenAt: s.LastSeenAt.UTC().Format(time.RFC3339),
+	}
+}
+
+// ApplyUsage fills UsageCount/LastUsedAt on views from usage telemetry.
+func ApplyUsage(views []SkillView, usage map[string]domain.SkillUsage) {
+	for i := range views {
+		u, ok := app.UsageFor(usage, domain.AgentID(views[i].Agent), views[i].Name, views[i].Path)
+		if !ok {
+			continue
+		}
+		views[i].UsageCount = u.UsageCount
+		if !u.LastUsedAt.IsZero() {
+			views[i].LastUsedAt = u.LastUsedAt.UTC().Format(time.RFC3339)
+		}
 	}
 }
 

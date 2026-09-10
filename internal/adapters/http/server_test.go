@@ -42,7 +42,7 @@ func newTestServerWithRegistry(t *testing.T) (*httptest.Server, string, *fakeReg
 		Projects: sqlite.NewProjectRepo(db), Scans: sqlite.NewScanRepo(db),
 		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, Vault: sqlite.NewVaultRepo(db),
 		Settings: sqlite.NewSettingsRepo(db), Converter: convert.Converter{}, Registries: []domain.Registry{reg},
-		DataDir: dataDir,
+		DataDir: dataDir, Probe: func(context.Context, int) (bool, int) { return false, 0 }, ServiceManager: &fakeManager{}, Usage: agents.ClaudeUsage{},
 	})
 	h, err := NewHandler(svc)
 	if err != nil {
@@ -91,7 +91,7 @@ func do(t *testing.T, method, url string, body any) (int, []byte) {
 func TestStaticAndHealthRoutes(t *testing.T) {
 	srv, _ := newTestServer(t)
 	status, body := do(t, "GET", srv.URL+"/api/health", nil)
-	var health map[string]string
+	var health map[string]any
 	if status != 200 || json.Unmarshal(body, &health) != nil || health["status"] != "ok" {
 		t.Fatalf("health %d %s", status, body)
 	}

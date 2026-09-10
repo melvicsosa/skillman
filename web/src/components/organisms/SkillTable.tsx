@@ -5,6 +5,8 @@ type Props = {
   skills: Skill[]
   agentNames: Record<string, string>
   showAgent: boolean
+  /** Render the Used column (only when some skill has telemetry). */
+  showUsage: boolean
   flagsFor: (id: string) => RowFlags
   busySkill: string | null
   onToggle: (skill: Skill, enabled: boolean) => void
@@ -12,7 +14,7 @@ type Props = {
   emptyHint: string
 }
 
-export function SkillTable({ skills, agentNames, showAgent, flagsFor, busySkill, onToggle, emptyTitle, emptyHint }: Props) {
+export function SkillTable({ skills, agentNames, showAgent, showUsage, flagsFor, busySkill, onToggle, emptyTitle, emptyHint }: Props) {
   if (skills.length === 0) {
     return (
       <div className="table-wrap">
@@ -32,6 +34,7 @@ export function SkillTable({ skills, agentNames, showAgent, flagsFor, busySkill,
           <col className="col-version" />
           {showAgent && <col className="col-agent" />}
           <col className="col-scope" />
+          {showUsage && <col className="col-used" />}
           <col className="col-flags" />
           <col className="col-state" />
         </colgroup>
@@ -42,6 +45,7 @@ export function SkillTable({ skills, agentNames, showAgent, flagsFor, busySkill,
             <th>Version</th>
             {showAgent && <th>Agent</th>}
             <th>Scope</th>
+            {showUsage && <th title="Times Claude Code invoked the skill">Used</th>}
             <th>Flags</th>
             <th>State</th>
           </tr>
@@ -53,6 +57,7 @@ export function SkillTable({ skills, agentNames, showAgent, flagsFor, busySkill,
               skill={s}
               agentName={agentNames[s.agent] ?? s.agent}
               showAgent={showAgent}
+              showUsage={showUsage}
               flags={flagsFor(s.id)}
               busy={busySkill === s.id}
               onToggle={(enabled) => onToggle(s, enabled)}
