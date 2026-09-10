@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # macOS: skillman-tray needs CGO (Cocoa) and cannot be cross-compiled from
+    # Linux; the CGO-free skillman linux binaries cross-compile fine from here.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:

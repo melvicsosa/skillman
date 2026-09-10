@@ -8,10 +8,21 @@ LDFLAGS  := -s -w \
 	-X $(MODULE)/internal/app/version.Commit=$(COMMIT) \
 	-X $(MODULE)/internal/app/version.Date=$(DATE)
 
-.PHONY: build test vet lint web run clean
+TRAY     := skillman-tray
 
-build: ## Build the binary into ./dist
+.PHONY: build build-cli build-tray test vet lint web run clean
+
+ifeq ($(shell uname),Darwin)
+build: build-cli build-tray ## Build skillman and skillman-tray into ./dist
+else
+build: build-cli ## Build skillman into ./dist (the tray is macOS only)
+endif
+
+build-cli: ## Build the CLI (CGO-free) into ./dist
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o dist/$(BINARY) ./cmd/$(BINARY)
+
+build-tray: ## Build the macOS menu bar app (needs CGO) into ./dist
+	CGO_ENABLED=1 go build -ldflags '$(LDFLAGS)' -o dist/$(TRAY) ./cmd/$(TRAY)
 
 test: ## Run Go tests
 	go test ./...

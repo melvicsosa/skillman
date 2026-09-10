@@ -287,6 +287,14 @@ because `SkillView` does not expose `vaultRef` yet.
 **Phase 3, always on.** launchd LaunchAgent (`service install`), port setting
 in UI, `skillman-tray` menu bar binary (open UI, start/stop, port, quit),
 usage stats from `~/.claude.json`.
+Status (2026-09-10): done. launchd adapter + `service` commands, port/token
+settings, `/api/usage`, and `skillman-tray` (`cmd/skillman-tray`,
+`internal/tray`, fyne.io/systray behind a `darwin` build tag so `skillman`
+stays CGO-free): status line polled every 5 s, open UI, start/stop/restart
+(launchd when installed, detached `serve` + pid file otherwise),
+install/uninstall service, port submenu, launch-at-login LaunchAgent,
+`skillman tray [--login|--no-login]`. Release runs on macOS and ships the
+tray in the darwin archives and the brew formula.
 
 **Phase 4, sync.** Fan-out from vault to all enabled agents, drift repair
 ("update codex copy from vault"), marketplace sources, Claude plugin export.

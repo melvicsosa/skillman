@@ -91,13 +91,31 @@ token) unlocks the skills.sh v1 API (trending, curated, file snapshots).
 Without it, search uses the public legacy endpoint and skill files are
 fetched from the source GitHub repository.
 
+## Menu bar app
+
+`skillman-tray` is a macOS status item (ships in the macOS release archive
+and with `brew install melvicsosa/tap/skillman`). Start it with
+`skillman tray`; it shows the server state (`Running on :3010 · v0.3.0`,
+`Stopped`, `Service not installed`) and offers **Open skillman**,
+**Start / Stop / Restart** (through launchd when the service is installed,
+otherwise a detached `skillman serve --no-open` tracked by
+`~/.skillman/serve.pid`), **Install / Uninstall background service**, a
+**Port** submenu (3010, 3011, 3012, 4010, 8010 or Custom… in Settings; a
+change restarts the server) and a **Launch at login** checkbox that writes
+`~/Library/LaunchAgents/com.melvicsosa.skillman-tray.plist` (`RunAtLoad`,
+no `KeepAlive`). `skillman tray --login` / `--no-login` toggle that item from
+the shell (`skillman-tray --install-login` / `--uninstall-login`). The tray
+honours `--data-dir` and `SKILLMAN_DATA_DIR`, and finds `skillman` next to
+its own binary or in `PATH`.
+
 ## Development
 
 Requirements: Go 1.26+, Node 22+, pnpm.
 
 ```sh
 make web     # install and build the frontend into web/dist
-make build   # build ./dist/skillman with version ldflags
+make build   # build ./dist/skillman (and ./dist/skillman-tray on macOS)
+make build-tray # build the macOS menu bar app only (needs CGO)
 make test    # go test ./...
 make vet     # go vet ./...
 make lint    # golangci-lint if installed, otherwise go vet
@@ -111,8 +129,11 @@ frontend development run `pnpm dev` inside `web/`; API calls are proxied to
 
 ## Release
 
-Releases are built by GoReleaser on `v*` tags and published to GitHub
-Releases and the `melvicsosa/homebrew-tap` Homebrew tap.
+Releases are built by GoReleaser on `v*` tags (on a macOS runner, because
+`skillman-tray` needs CGO; the CGO-free `skillman` Linux binaries are
+cross-compiled from there) and published to GitHub Releases and the
+`melvicsosa/homebrew-tap` Homebrew tap. The darwin archives contain both
+binaries; the linux archives only `skillman`.
 
 ## License
 
