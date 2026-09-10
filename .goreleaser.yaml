@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: skillman
+
+# The frontend is built by the release workflow (make web) before goreleaser
+# runs, so web/dist is already populated when the Go build embeds it.
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: skillman
+    main: ./cmd/skillman
+    binary: skillman
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/melvicsosa/skillman/internal/app/version.Version={{ .Version }}
+      - -X github.com/melvicsosa/skillman/internal/app/version.Commit={{ .ShortCommit }}
+      - -X github.com/melvicsosa/skillman/internal/app/version.Date={{ .Date }}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: melvicsosa
+    name: skillman
+
+brews:
+  - name: skillman
+    repository:
+      owner: melvicsosa
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/melvicsosa/skillman
+    description: "Cross-agent AI skill manager with a local UI"
+    license: MIT
+    commit_author:
+      name: goreleaser
+      email: bot@goreleaser.com
+    install: |
+      bin.install "skillman"
+    test: |
+      system "#{bin}/skillman", "version"

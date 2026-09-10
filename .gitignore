@@ -1,0 +1,24 @@
+# Go
+/dist/
+*.test
+*.out
+/skillman
+
+# Node
+node_modules/
+
+# Web build (placeholder index.html and .gitkeep stay tracked)
+web/dist/*
+!web/dist/.gitkeep
+!web/dist/index.html
+
+# Local data
+.skillman/
+*.db
+*.db-wal
+*.db-shm
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
