@@ -85,28 +85,42 @@ type SkillInfo struct {
 	SpecIssues  []string
 }
 
-// VaultSource records where a vault entry was downloaded from.
+// Source types recorded in VaultSource.Type.
+const (
+	SourceGitHub  = "github"
+	SourceSkillSH = "skillssh"
+	SourceLocal   = "local"
+	SourceURL     = "url"
+	SourceLock    = "lock" // imported from ~/.agents/.skill-lock.json
+)
+
+// VaultSource records where a vault entry was downloaded from. Ref is the
+// user-facing reference that re-fetches the entry (see app.ResolveRef).
 type VaultSource struct {
-	Type    string // "skillssh", "github", "local", "url"
-	Ref     string
-	URL     string
-	Subpath string
+	Type    string `json:"type"` // one of the Source* constants
+	Ref     string `json:"ref"`
+	URL     string `json:"url,omitempty"`
+	Subpath string `json:"subpath,omitempty"`
+	Commit  string `json:"commit,omitempty"` // commit sha, registry hash or version when known
 }
 
 // SpecReport is the result of validating a skill against the Agent Skills spec.
 type SpecReport struct {
-	Valid  bool
-	Issues []string
+	Valid  bool     `json:"valid"`
+	Issues []string `json:"issues"`
 }
 
-// VaultEntry is one canonical local copy of a downloaded skill.
+// VaultEntry is one canonical local copy of a downloaded skill. Path is
+// <dataDir>/vault/<Name>; the provenance sidecar next to it is the source of
+// truth and the database row is a cache of it.
 type VaultEntry struct {
-	Name        string
-	Path        string
-	ContentHash string
-	Source      VaultSource
-	SourceHash  string
-	InstalledAt time.Time
-	UpdatedAt   time.Time
-	Spec        SpecReport
+	Name          string      `json:"name"`
+	Path          string      `json:"path"`
+	ContentHash   string      `json:"contentHash"`
+	Source        VaultSource `json:"source"`
+	SourceHash    string      `json:"sourceHash"`
+	InstalledAt   time.Time   `json:"installedAt"`
+	UpdatedAt     time.Time   `json:"updatedAt"`
+	ConvertedFrom string      `json:"convertedFrom,omitempty"` // source shape, "" when none
+	Spec          SpecReport  `json:"spec"`
 }

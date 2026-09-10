@@ -1,0 +1,1 @@
+{"error":"authentication_required","message":"This endpoint requires authentication. Pass a Vercel OIDC token (Authorization: Bearer <VERCEL_OIDC_TOKEN>) — see https://skills.sh/docs/api#authentication."}

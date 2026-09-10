@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "expo/skills/react-native",
+      "slug": "react-native",
+      "name": "React Native",
+      "source": "expo/skills",
+      "installs": 3842,
+      "sourceType": "github",
+      "installUrl": "https://github.com/expo/skills",
+      "url": "https://skills.sh/expo/skills/react-native"
+    }
+  ],
+  "query": "react native",
+  "searchType": "semantic",
+  "count": 1,
+  "durationMs": 142
+}

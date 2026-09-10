@@ -23,6 +23,10 @@ type Service struct {
 	scans      domain.ScanRepository
 	inspector  domain.SkillInspector
 	quarantine domain.Quarantine
+	vault      domain.VaultRepository
+	settings   domain.SettingsRepository
+	converter  domain.Converter
+	registries []domain.Registry
 	dataDir    string
 }
 
@@ -35,6 +39,12 @@ type Deps struct {
 	Scans      domain.ScanRepository
 	Inspector  domain.SkillInspector
 	Quarantine domain.Quarantine
+	Vault      domain.VaultRepository
+	Settings   domain.SettingsRepository
+	Converter  domain.Converter
+	// Registries are consulted in order by ResolveRef; the first whose
+	// Matches (see RefMatcher) accepts the ref wins.
+	Registries []domain.Registry
 	DataDir    string
 }
 
@@ -42,7 +52,8 @@ type Deps struct {
 func New(d Deps) *Service {
 	return &Service{
 		agents: d.Agents, agentRepo: d.AgentRepo, skills: d.Skills, projects: d.Projects,
-		scans: d.Scans, inspector: d.Inspector, quarantine: d.Quarantine, dataDir: d.DataDir,
+		scans: d.Scans, inspector: d.Inspector, quarantine: d.Quarantine, vault: d.Vault, settings: d.Settings,
+		converter: d.Converter, registries: d.Registries, dataDir: d.DataDir,
 	}
 }
 

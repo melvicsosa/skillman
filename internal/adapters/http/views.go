@@ -35,6 +35,7 @@ type SkillView struct {
 	State          string `json:"state"`
 	QuarantinePath string `json:"quarantinePath,omitempty"`
 	ReadOnly       bool   `json:"readOnly"`
+	VaultRef       string `json:"vaultRef,omitempty"`
 	LastSeenAt     string `json:"lastSeenAt"`
 }
 
@@ -79,7 +80,7 @@ func ToSkillView(s domain.Skill) SkillView {
 		ID: s.ID, Agent: string(s.AgentID), Scope: string(s.Scope), ProjectRoot: s.Scope.ProjectRoot(),
 		Path: s.Path, Name: s.Name, Description: s.Description, Version: s.Version, ContentHash: s.ContentHash,
 		IsSymlink: s.IsSymlink, LinkTarget: s.LinkTarget, State: string(s.State), QuarantinePath: s.QuarantinePath,
-		ReadOnly: s.ReadOnly, LastSeenAt: s.LastSeenAt.UTC().Format(time.RFC3339),
+		ReadOnly: s.ReadOnly, VaultRef: s.VaultRef, LastSeenAt: s.LastSeenAt.UTC().Format(time.RFC3339),
 	}
 }
 
@@ -102,4 +103,36 @@ func nonNil(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+// VaultView is the JSON shape of a vault entry with its links.
+type VaultView struct {
+	Name          string             `json:"name"`
+	Path          string             `json:"path"`
+	ContentHash   string             `json:"contentHash"`
+	Source        domain.VaultSource `json:"source"`
+	SourceHash    string             `json:"sourceHash"`
+	InstalledAt   string             `json:"installedAt"`
+	UpdatedAt     string             `json:"updatedAt"`
+	ConvertedFrom string             `json:"convertedFrom,omitempty"`
+	Spec          domain.SpecReport  `json:"spec"`
+	Links         []SkillView        `json:"links"`
+}
+
+// ToVaultViews converts vault statuses.
+func ToVaultViews(list []app.VaultStatus) []VaultView {
+	out := make([]VaultView, 0, len(list))
+	for _, v := range list {
+		out = append(out, ToVaultView(v))
+	}
+	return out
+}
+
+// ToVaultView converts one vault status.
+func ToVaultView(v app.VaultStatus) VaultView {
+	return VaultView{
+		Name: v.Name, Path: v.Path, ContentHash: v.ContentHash, Source: v.Source, SourceHash: v.SourceHash,
+		InstalledAt: v.InstalledAt.UTC().Format(time.RFC3339), UpdatedAt: v.UpdatedAt.UTC().Format(time.RFC3339),
+		ConvertedFrom: v.ConvertedFrom, Spec: v.Spec, Links: ToSkillViews(v.Links),
+	}
 }

@@ -11,6 +11,14 @@ var (
 	ErrReadOnly  = errors.New("skill is read-only and cannot be disabled")
 	ErrAmbiguous = errors.New("ambiguous")
 	ErrExists    = errors.New("already exists")
+	// ErrRejected is returned when a source cannot be converted to a skill.
+	ErrRejected = errors.New("rejected")
+	// ErrLinked is returned when a vault entry is still installed somewhere.
+	ErrLinked = errors.New("still linked")
+	// ErrAuthRequired is returned by registries whose endpoint needs a token.
+	ErrAuthRequired = errors.New("authentication required")
+	// ErrUnsupported is returned when a registry does not offer an operation.
+	ErrUnsupported = errors.New("unsupported")
 )
 
 // SkillFilter narrows a skill listing. Zero values mean "no constraint".
@@ -59,6 +67,102 @@ type ScanRepository interface {
 type SettingsRepository interface {
 	GetSetting(ctx context.Context, key string) (value string, ok bool, err error)
 	SetSetting(ctx context.Context, key, value string) error
+}
+
+// VaultRepository caches vault entries (the provenance sidecars are the truth).
+type VaultRepository interface {
+	ListVault(ctx context.Context) ([]VaultEntry, error)
+	// GetVault returns ErrNotFound when the entry is unknown.
+	GetVault(ctx context.Context, name string) (VaultEntry, error)
+	UpsertVault(ctx context.Context, e VaultEntry) error
+	DeleteVault(ctx context.Context, name string) error
+}
+
+// RegistryResult is one hit of a registry search or listing.
+type RegistryResult struct {
+	Registry   string `json:"registry"` // registry ID
+	ID         string `json:"id"`       // registry-specific stable id
+	Name       string `json:"name"`
+	Source     string `json:"source"` // "owner/repo" or provider
+	Installs   int    `json:"installs,omitempty"`
+	URL        string `json:"url,omitempty"`
+	InstallURL string `json:"installUrl,omitempty"`
+	// Ref is the reference to pass to `add` to install this result.
+	Ref string `json:"ref"`
+}
+
+// CuratedOwner groups the curated skills of one owner.
+type CuratedOwner struct {
+	Owner         string           `json:"owner"`
+	TotalInstalls int              `json:"totalInstalls"`
+	Skills        []RegistryResult `json:"skills"`
+}
+
+// FetchResult is what a registry hands back after downloading a ref: a
+// temporary directory holding the fetched content and its provenance.
+// Callers must call Cleanup when done.
+type FetchResult struct {
+	Dir     string // directory to detect/convert (a skill dir, a plugin dir, ...)
+	Name    string // suggested skill name, "" when the converter should derive it
+	Source  VaultSource
+	Cleanup func()
+}
+
+// Registry is one source of downloadable skills.
+type Registry interface {
+	ID() string
+	// Search returns hits for q. Registries without search return ErrUnsupported.
+	Search(ctx context.Context, q string) ([]RegistryResult, error)
+	// Fetch downloads ref into a temp dir.
+	Fetch(ctx context.Context, ref string) (FetchResult, error)
+}
+
+// TrendingLister is implemented by registries that expose a trending list.
+type TrendingLister interface {
+	Trending(ctx context.Context) ([]RegistryResult, error)
+}
+
+// CuratedLister is implemented by registries that expose a curated list.
+type CuratedLister interface {
+	Curated(ctx context.Context) ([]CuratedOwner, error)
+}
+
+// SourceShape is what a converter detected in a source directory or file.
+type SourceShape string
+
+// Source shapes (PLAN.md section 4).
+const (
+	ShapeSkill           SourceShape = "skill"
+	ShapeCursorRule      SourceShape = "cursor-rule"
+	ShapeClaudeCommand   SourceShape = "claude-command"
+	ShapeOpenCodeCommand SourceShape = "opencode-command"
+	ShapeClaudePlugin    SourceShape = "claude-plugin"
+	ShapeUnknown         SourceShape = "unknown"
+)
+
+// ConvertedSkill is one spec skill produced by a conversion.
+type ConvertedSkill struct {
+	Name          string   `json:"name"`
+	Path          string   `json:"path"`
+	ConvertedFrom string   `json:"convertedFrom,omitempty"`
+	Warnings      []string `json:"warnings,omitempty"`
+}
+
+// ConversionReport describes what a conversion produced.
+type ConversionReport struct {
+	Shape  SourceShape      `json:"shape"`
+	Skills []ConvertedSkill `json:"skills"`
+}
+
+// Converter detects the shape of a source and normalizes it to spec skills.
+type Converter interface {
+	// Detect classifies src (a directory or a single file).
+	Detect(src string) (SourceShape, error)
+	// Convert writes one spec skill per produced skill under dstRoot/<name>.
+	// name is the requested skill name for single-skill shapes; "" derives it
+	// from src. Sources that cannot be converted return an error wrapping
+	// ErrRejected.
+	Convert(src, dstRoot, name string) (ConversionReport, error)
 }
 
 // AgentSource knows the supported agents and how to discover their skills.

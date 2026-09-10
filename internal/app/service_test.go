@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/melvicsosa/skillman/internal/adapters/agents"
+	"github.com/melvicsosa/skillman/internal/adapters/convert"
 	skillfs "github.com/melvicsosa/skillman/internal/adapters/fs"
 	"github.com/melvicsosa/skillman/internal/adapters/storage/sqlite"
 	"github.com/melvicsosa/skillman/internal/domain"
@@ -20,13 +21,14 @@ type fixture struct {
 	dataDir string
 	db      *sqlite.DB
 	svc     *Service
+	reg     *fakeRegistry
 }
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv(agents.HomeEnv, home)
-	f := &fixture{t: t, home: home, dataDir: filepath.Join(t.TempDir(), "data")}
+	f := &fixture{t: t, home: home, dataDir: filepath.Join(t.TempDir(), "data"), reg: &fakeRegistry{id: "fake", sources: map[string]string{}}}
 	f.open()
 	return f
 }
@@ -41,7 +43,9 @@ func (f *fixture) open() {
 	f.svc = New(Deps{
 		Agents: agents.Source{}, AgentRepo: sqlite.NewAgentRepo(db), Skills: sqlite.NewSkillRepo(db),
 		Projects: sqlite.NewProjectRepo(db), Scans: sqlite.NewScanRepo(db),
-		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, DataDir: f.dataDir,
+		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, Vault: sqlite.NewVaultRepo(db),
+		Settings: sqlite.NewSettingsRepo(db), Converter: convert.Converter{}, Registries: []domain.Registry{f.reg},
+		DataDir: f.dataDir,
 	})
 }
 

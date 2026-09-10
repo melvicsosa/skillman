@@ -1,0 +1,44 @@
+{
+  "query": "react",
+  "searchType": "fuzzy",
+  "searchVersion": "legacy",
+  "skills": [
+    {
+      "id": "vercel-labs/agent-skills/vercel-react-best-practices",
+      "skillId": "vercel-react-best-practices",
+      "name": "vercel-react-best-practices",
+      "installs": 702718,
+      "source": "vercel-labs/agent-skills"
+    },
+    {
+      "id": "vercel-labs/agent-skills/vercel-react-native-skills",
+      "skillId": "vercel-react-native-skills",
+      "name": "vercel-react-native-skills",
+      "installs": 206901,
+      "source": "vercel-labs/agent-skills"
+    },
+    {
+      "id": "vercel-labs/agent-skills/vercel-react-view-transitions",
+      "skillId": "vercel-react-view-transitions",
+      "name": "vercel-react-view-transitions",
+      "installs": 117206,
+      "source": "vercel-labs/agent-skills"
+    },
+    {
+      "id": "vercel-labs/json-render/react",
+      "skillId": "react",
+      "name": "react",
+      "installs": 8751,
+      "source": "vercel-labs/json-render"
+    },
+    {
+      "id": "google-labs-code/stitch-skills/react:components",
+      "skillId": "react:components",
+      "name": "react:components",
+      "installs": 50670,
+      "source": "google-labs-code/stitch-skills"
+    }
+  ],
+  "count": 5,
+  "duration_ms": 386
+}

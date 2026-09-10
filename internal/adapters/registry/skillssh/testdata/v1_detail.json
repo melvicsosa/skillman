@@ -1,0 +1,11 @@
+{
+  "id": "vercel-labs/skills/find-skills",
+  "source": "vercel-labs/skills",
+  "slug": "find-skills",
+  "installs": 24531,
+  "hash": "a1b2c3d4e5f6",
+  "files": [
+    { "path": "SKILL.md", "contents": "---\nname: find-skills\ndescription: Find skills\n---\nBody\n" },
+    { "path": "examples/app-router.ts", "contents": "// Example code" }
+  ]
+}

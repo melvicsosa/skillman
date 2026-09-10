@@ -274,6 +274,15 @@ with the agent/skill views.
 **Phase 2, vault + registry.** Vault store and provenance, converter (§4),
 skills.sh + GitHub sources, `search`/`add`/`vault`, `import-lock`, Discover
 and Vault views in the UI.
+Status (2026-09-10): backend and CLI done (vault + sidecars, converter,
+skills.sh/GitHub/local/URL sources, `search`/`add`/`vault`/`import-lock`,
+`/api/vault` and `/api/registry` routes). Note: skills.sh `/api/v1/*` now
+requires a Vercel OIDC token; without one, search uses the public legacy
+`/api/search` and skill files come from the GitHub tarball of the source
+repository. Discover and Vault UI views done (sidebar entries, skill × agent
+install matrix, add-by-ref/import-lock, search/trending/curated with install
+dialog); the agent table derives its "vault" badge from `/api/vault` links
+because `SkillView` does not expose `vaultRef` yet.
 
 **Phase 3, always on.** launchd LaunchAgent (`service install`), port setting
 in UI, `skillman-tray` menu bar binary (open UI, start/stop, port, quit),

@@ -17,6 +17,9 @@ const (
 	IssueDrift              = "drift"
 	IssueQuarantineConflict = "quarantine-conflict"
 	IssueScanError          = "scan-error"
+	IssueVaultBrokenLink    = "vault-broken-link"
+	IssueVaultMissing       = "vault-missing"
+	IssueRejectedConversion = "rejected-conversion"
 )
 
 // Issue is one problem found by Doctor. SkillID is set when the issue maps
@@ -63,6 +66,7 @@ func (s *Service) Doctor(ctx context.Context) (DoctorReport, error) {
 	if err != nil {
 		return report, err
 	}
+	vaultIdx := newVaultIndex(s.VaultRoot(), nil)
 	var all []inspected
 	for _, t := range targets {
 		found, err := s.agents.Discover(t.agent, t.scope, t.root)
@@ -76,6 +80,10 @@ func (s *Service) Doctor(ctx context.Context) (DoctorReport, error) {
 			if d.Dangling {
 				base.Kind = IssueDanglingSymlink
 				base.Message = fmt.Sprintf("symlink target %s does not exist", d.LinkTarget)
+				if name := vaultIdx.nameForTarget(d.LinkTarget); name != "" {
+					base.Kind = IssueVaultBrokenLink
+					base.Message = fmt.Sprintf("symlink points at vault entry %q which no longer exists (%s)", name, d.LinkTarget)
+				}
 				report.Issues = append(report.Issues, base)
 				continue
 			}
@@ -110,10 +118,37 @@ func (s *Service) Doctor(ctx context.Context) (DoctorReport, error) {
 			})
 		}
 	}
+	if err := s.vaultIssues(ctx, &report); err != nil {
+		return report, err
+	}
 	for _, i := range report.Issues {
 		report.Counts[i.Kind]++
 	}
 	return report, nil
+}
+
+// vaultIssues reports vault entries whose directory is gone, sidecars
+// without a directory, and recorded conversion rejections.
+func (s *Service) vaultIssues(ctx context.Context, report *DoctorReport) error {
+	entries, err := s.vault.ListVault(ctx)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if _, err := os.Stat(e.Path); err != nil {
+			report.Issues = append(report.Issues, Issue{Kind: IssueVaultMissing, Name: e.Name, Path: e.Path,
+				Message: fmt.Sprintf("vault entry %q has no directory; run `skillman vault remove %s` or re-add %s", e.Name, e.Name, e.Source.Ref)})
+		}
+	}
+	rejections, err := s.Rejections()
+	if err != nil {
+		return err
+	}
+	for _, r := range rejections {
+		report.Issues = append(report.Issues, Issue{Kind: IssueRejectedConversion, Name: r.Ref, Path: r.Ref,
+			Message: fmt.Sprintf("%s could not be converted (%s): %s", r.Ref, r.Shape, r.Reason)})
+	}
+	return nil
 }
 
 // driftIssues groups skills by (scope, name) and reports groups whose

@@ -61,6 +61,98 @@ export type DoctorReport = {
   counts: Record<string, number>
 }
 
+export type VaultSource = {
+  type: 'github' | 'skillssh' | 'local' | 'url' | 'lock' | string
+  ref: string
+  url?: string
+  subpath?: string
+  commit?: string
+}
+
+export type SpecReport = {
+  valid: boolean
+  issues: string[] | null
+}
+
+/** One vault entry with the agent skills that link to it (GET /api/vault). */
+export type VaultEntry = {
+  name: string
+  path: string
+  contentHash: string
+  source: VaultSource
+  sourceHash: string
+  installedAt: string
+  updatedAt: string
+  convertedFrom?: string
+  spec: SpecReport
+  links: Skill[]
+}
+
+export type LinkResult = {
+  agent: string
+  scope: string
+  path: string
+  copied: boolean
+  existing: boolean
+}
+
+export type InstallRequest = {
+  agents: string[]
+  project?: string
+  copy?: boolean
+}
+
+export type VaultRemoveResult = {
+  name: string
+  unlinked: string[]
+}
+
+export type VaultUpdateResult = {
+  name: string
+  updated: boolean
+  oldSourceHash: string
+  newSourceHash: string
+  copiesRefreshed: string[] | null
+  warnings: string[] | null
+}
+
+export type RegistryResult = {
+  registry: string
+  id: string
+  name: string
+  source: string
+  installs?: number
+  url?: string
+  installUrl?: string
+  ref: string
+}
+
+export type SearchResult = {
+  results: RegistryResult[]
+  errors: string[]
+}
+
+export type CuratedOwner = {
+  owner: string
+  totalInstalls: number
+  skills: RegistryResult[]
+}
+
+export type AddResult = {
+  shape: string
+  entries: Omit<VaultEntry, 'links'>[]
+  links: LinkResult[]
+  warnings: string[]
+}
+
+export type LockImportResult = {
+  lockFile: string
+  imported: string[] | null
+  skipped: { name: string; reason: string }[] | null
+}
+
+export type RegistrySource = '' | 'skillssh' | 'github'
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -115,4 +207,31 @@ export const api = {
     }),
   doctor: () => request<DoctorReport>('/api/doctor'),
   health: () => request<{ version: string }>('/api/health'),
+  vault: () => request<VaultEntry[]>('/api/vault'),
+  removeVault: (name: string, force: boolean) =>
+    request<VaultRemoveResult>(`/api/vault/${encodeURIComponent(name)}${force ? '?force=true' : ''}`, {
+      method: 'DELETE',
+    }),
+  installVault: (name: string, body: InstallRequest) =>
+    request<{ links: LinkResult[] }>(`/api/vault/${encodeURIComponent(name)}/install`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  uninstallVault: (name: string, agent: string, project?: string) =>
+    request<{ removed: string[] | null }>(`/api/vault/${encodeURIComponent(name)}/uninstall`, {
+      method: 'POST',
+      body: JSON.stringify({ agent, project }),
+    }),
+  updateVault: (name: string) =>
+    request<VaultUpdateResult>(`/api/vault/${encodeURIComponent(name)}/update`, { method: 'POST' }),
+  search: (q: string, source: RegistrySource, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ q })
+    if (source) params.set('source', source)
+    return request<SearchResult>(`/api/registry/search?${params.toString()}`, { signal })
+  },
+  trending: () => request<RegistryResult[]>('/api/registry/trending'),
+  curated: () => request<CuratedOwner[]>('/api/registry/curated'),
+  addRef: (ref: string, body: InstallRequest) =>
+    request<AddResult>('/api/registry/add', { method: 'POST', body: JSON.stringify({ ref, ...body }) }),
+  importLock: () => request<LockImportResult>('/api/import-lock', { method: 'POST' }),
 }

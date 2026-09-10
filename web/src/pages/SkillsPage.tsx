@@ -1,55 +1,37 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
-import { api, type Skill } from '../api/client'
-import { useApi } from '../hooks/useApi'
-import type { ToastMessage } from '../components/molecules/Toast'
-import { ToastArea } from '../components/molecules/Toast'
+import { api, type Agent, type DoctorReport, type Project, type Skill, type VaultEntry } from '../api/client'
+import type { ApiState } from '../hooks/useApi'
+import { errMsg, type ToastFn } from '../hooks/useToast'
 import type { ScopeTab } from '../components/molecules/ScopeTabs'
 import type { RowFlags } from '../components/molecules/SkillRow'
-import { ALL_AGENTS, Sidebar } from '../components/organisms/Sidebar'
+import { ALL_AGENTS } from '../components/organisms/Sidebar'
 import { TopBar } from '../components/organisms/TopBar'
 import { SkillTable } from '../components/organisms/SkillTable'
 import { DoctorPanel } from '../components/organisms/DoctorPanel'
 
-const fetchAgents = () => api.agents()
-const fetchSkills = () => api.skills()
-const fetchProjects = () => api.projects()
-const fetchDoctor = () => api.doctor()
-const fetchHealth = () => api.health()
+type Props = {
+  agents: ApiState<Agent[]>
+  skills: ApiState<Skill[]>
+  projects: ApiState<Project[]>
+  doctor: ApiState<DoctorReport>
+  vault: VaultEntry[]
+  selectedAgent: string
+  toast: ToastFn
+  refreshAll: () => Promise<void>
+}
 
-export function SkillsPage() {
-  const agents = useApi(fetchAgents)
-  const skills = useApi(fetchSkills)
-  const projects = useApi(fetchProjects)
-  const doctor = useApi(fetchDoctor)
-  const health = useApi(fetchHealth)
-
-  const [selectedAgent, setSelectedAgent] = useState<string>(ALL_AGENTS)
+export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAgent, toast, refreshAll }: Props) {
   const [scope, setScope] = useState<ScopeTab>('global')
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [busySkill, setBusySkill] = useState<string | null>(null)
-  const [busyAgent, setBusyAgent] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
-  const [toasts, setToasts] = useState<ToastMessage[]>([])
-  const toastSeq = useRef(0)
-
-  const toast = useCallback((title: string, body: string | undefined, tone: ToastMessage['tone'] = 'ok') => {
-    const id = ++toastSeq.current
-    setToasts((t) => [...t, { id, title, body, tone }])
-    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), tone === 'error' ? 8000 : 5000)
-  }, [])
 
   const agentList = useMemo(() => agents.data ?? [], [agents.data])
   const agentNames = useMemo(() => Object.fromEntries(agentList.map((a) => [a.id, a.name])), [agentList])
   const enabledAgents = useMemo(() => new Set(agentList.filter((a) => a.enabled).map((a) => a.id)), [agentList])
-
   const allSkills = useMemo(() => skills.data ?? [], [skills.data])
-  const counts = useMemo(() => {
-    const c: Record<string, number> = {}
-    for (const s of allSkills) c[s.agent] = (c[s.agent] ?? 0) + 1
-    return c
-  }, [allSkills])
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -71,13 +53,11 @@ export function SkillsPage() {
         idx[i.skillId] = { ...idx[i.skillId], invalid: i.message }
       }
     }
+    // The skills API does not expose vaultRef; derive it from the vault links.
+    for (const v of vault) for (const l of v.links) idx[l.id] = { ...idx[l.id], vault: v.name }
     return idx
-  }, [doctor.data])
+  }, [doctor.data, vault])
   const flagsFor = useCallback((id: string) => flagIndex[id] ?? {}, [flagIndex])
-
-  const refreshAll = useCallback(async () => {
-    await Promise.all([agents.reload(), skills.reload(), projects.reload(), doctor.reload()])
-  }, [agents, skills, projects, doctor])
 
   const onToggleSkill = async (skill: Skill, enabled: boolean) => {
     setBusySkill(skill.id)
@@ -92,18 +72,6 @@ export function SkillsPage() {
       toast(`Could not ${enabled ? 'enable' : 'disable'} ${skill.name}`, errMsg(err), 'error')
     } finally {
       setBusySkill(null)
-    }
-  }
-
-  const onToggleAgent = async (id: string, enabled: boolean) => {
-    setBusyAgent(id)
-    try {
-      await api.setAgentEnabled(id, enabled)
-      await agents.reload()
-    } catch (err) {
-      toast(`Could not update ${agentNames[id] ?? id}`, errMsg(err), 'error')
-    } finally {
-      setBusyAgent(null)
     }
   }
 
@@ -142,74 +110,57 @@ export function SkillsPage() {
   const initialLoading = (agents.loading && !agents.data) || (skills.loading && !skills.data)
 
   return (
-    <div className="app">
-      <Sidebar
-        agents={agentList}
-        counts={counts}
-        totalCount={allSkills.length}
-        selected={selectedAgent}
-        busyAgent={busyAgent}
-        version={health.data?.version ?? ''}
-        onSelect={setSelectedAgent}
-        onToggle={onToggleAgent}
+    <>
+      <TopBar
+        query={query}
+        onQuery={setQuery}
+        scope={scope}
+        onScope={setScope}
+        projects={projects.data ?? []}
+        selectedProject={selectedProject}
+        onSelectProject={setSelectedProject}
+        onAddProject={onAddProject}
+        scanning={scanning}
+        onScan={onScan}
       />
-      <main className="main">
-        <TopBar
-          query={query}
-          onQuery={setQuery}
-          scope={scope}
-          onScope={setScope}
-          projects={projects.data ?? []}
-          selectedProject={selectedProject}
-          onSelectProject={setSelectedProject}
-          onAddProject={onAddProject}
-          scanning={scanning}
-          onScan={onScan}
-        />
-        <div className="content">
-          {loadError ? (
-            <div className="table-wrap">
-              <div className="state-box is-error">
-                <h3>Could not reach the skillman server</h3>
-                <p>{loadError}. Is `skillman serve` running?</p>
-              </div>
+      <div className="content">
+        {loadError ? (
+          <div className="table-wrap">
+            <div className="state-box is-error">
+              <h3>Could not reach the skillman server</h3>
+              <p>{loadError}. Is `skillman serve` running?</p>
             </div>
-          ) : initialLoading ? (
-            <div className="table-wrap">
-              <div className="state-box">Loading skills…</div>
-            </div>
-          ) : (
-            <>
-              <p className="summary">
-                <span>
-                  <strong>{visible.length}</strong> {visible.length === 1 ? 'skill' : 'skills'}
-                  {selectedAgent !== ALL_AGENTS && ` for ${agentNames[selectedAgent] ?? selectedAgent}`}
-                  {scope === 'project' && selectedProject && ` in ${selectedProject}`}
-                </span>
-                <span>{visible.filter((s) => s.state === 'disabled').length} disabled</span>
-              </p>
-              <SkillTable
-                skills={visible}
-                agentNames={agentNames}
-                showAgent={selectedAgent === ALL_AGENTS}
-                flagsFor={flagsFor}
-                busySkill={busySkill}
-                onToggle={onToggleSkill}
-                emptyTitle={emptyTitle(allSkills.length, scope, projects.data?.length ?? 0, query)}
-                emptyHint={emptyHint(allSkills.length, scope, projects.data?.length ?? 0, query)}
-              />
-              <DoctorPanel report={doctor.data} error={doctor.error} loading={doctor.loading} />
-            </>
-          )}
-        </div>
-      </main>
-      <ToastArea toasts={toasts} />
-    </div>
+          </div>
+        ) : initialLoading ? (
+          <div className="table-wrap">
+            <div className="state-box">Loading skills…</div>
+          </div>
+        ) : (
+          <>
+            <p className="summary">
+              <span>
+                <strong>{visible.length}</strong> {visible.length === 1 ? 'skill' : 'skills'}
+                {selectedAgent !== ALL_AGENTS && ` for ${agentNames[selectedAgent] ?? selectedAgent}`}
+                {scope === 'project' && selectedProject && ` in ${selectedProject}`}
+              </span>
+              <span>{visible.filter((s) => s.state === 'disabled').length} disabled</span>
+            </p>
+            <SkillTable
+              skills={visible}
+              agentNames={agentNames}
+              showAgent={selectedAgent === ALL_AGENTS}
+              flagsFor={flagsFor}
+              busySkill={busySkill}
+              onToggle={onToggleSkill}
+              emptyTitle={emptyTitle(allSkills.length, scope, projects.data?.length ?? 0, query)}
+              emptyHint={emptyHint(allSkills.length, scope, projects.data?.length ?? 0, query)}
+            />
+            <DoctorPanel report={doctor.data} error={doctor.error} loading={doctor.loading} />
+          </>
+        )}
+      </div>
+    </>
   )
-}
-
-function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
 }
 
 function emptyTitle(total: number, scope: ScopeTab, projectCount: number, query: string): string {

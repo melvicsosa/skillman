@@ -5,6 +5,8 @@ import { Toggle } from '../atoms/Toggle'
 export type RowFlags = {
   drift?: string
   invalid?: string
+  /** Vault entry name when the skill is linked from the vault. */
+  vault?: string
 }
 
 type Props = {
@@ -40,6 +42,7 @@ export function SkillRow({ skill, agentName, showAgent, flags, busy, onToggle }:
         <div className="cell-badges">
           {skill.isSymlink && <Badge title={`Symlink to ${skill.linkTarget ?? '?'}`}>symlink</Badge>}
           {skill.readOnly && <Badge tone="info" title="Managed by the agent; cannot be disabled here">read-only</Badge>}
+          {flags.vault && <Badge tone="info" title={`Installed from vault entry ${flags.vault}`}>vault</Badge>}
           {flags.drift && <Badge tone="warn" title={flags.drift}>drift</Badge>}
           {flags.invalid && <Badge tone="danger" title={flags.invalid}>invalid</Badge>}
         </div>

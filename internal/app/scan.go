@@ -67,12 +67,17 @@ func (s *Service) Scan(ctx context.Context, opts ScanOptions) (ScanSummary, erro
 	if err != nil {
 		return sum, err
 	}
+	entries, err := s.rebuildVault(ctx, &sum)
+	if err != nil {
+		return sum, err
+	}
+	idx := newVaultIndex(s.VaultRoot(), entries)
 	for _, t := range targets {
-		if err := s.scanTarget(ctx, t, &sum); err != nil {
+		if err := s.scanTarget(ctx, t, idx, &sum); err != nil {
 			sum.Errors = append(sum.Errors, fmt.Sprintf("%s %s: %v", t.agent.ID, t.scope, err))
 		}
 	}
-	if err := s.scanQuarantine(ctx, &sum); err != nil {
+	if err := s.scanQuarantine(ctx, idx, &sum); err != nil {
 		sum.Errors = append(sum.Errors, "quarantine: "+err.Error())
 	}
 	if err := s.scans.Finish(ctx, scanID, sum.Found, sum.Errors); err != nil {
@@ -113,7 +118,7 @@ func (s *Service) scanTargets(ctx context.Context, agents []domain.Agent, opts S
 	return targets, nil
 }
 
-func (s *Service) scanTarget(ctx context.Context, t scanTarget, sum *ScanSummary) error {
+func (s *Service) scanTarget(ctx context.Context, t scanTarget, idx vaultIndex, sum *ScanSummary) error {
 	existing, err := s.skills.List(ctx, domain.SkillFilter{Agent: t.agent.ID, Scope: t.scope})
 	if err != nil {
 		return err
@@ -146,6 +151,7 @@ func (s *Service) scanTarget(ctx context.Context, t scanTarget, sum *ScanSummary
 			ProjectID: t.projectID, Path: d.Path, Name: d.Name, Description: info.Description,
 			Version: info.Version, ContentHash: info.ContentHash, IsSymlink: d.IsSymlink,
 			LinkTarget: d.LinkTarget, State: domain.SkillEnabled, ReadOnly: d.ReadOnly, LastSeenAt: now,
+			VaultRef: idx.refFor(d.IsSymlink, d.LinkTarget, info.ContentHash),
 		}
 		batch = append(batch, sk)
 		seen = append(seen, sk.ID)
@@ -167,7 +173,7 @@ func (s *Service) scanTarget(ctx context.Context, t scanTarget, sum *ScanSummary
 
 // scanQuarantine walks <dataDir>/disabled/** and upserts one disabled row
 // per sidecar whose entry still exists.
-func (s *Service) scanQuarantine(ctx context.Context, sum *ScanSummary) error {
+func (s *Service) scanQuarantine(ctx context.Context, idx vaultIndex, sum *ScanSummary) error {
 	root := s.QuarantineRoot()
 	var batch []domain.Skill
 	now := time.Now()
@@ -209,6 +215,7 @@ func (s *Service) scanQuarantine(ctx context.Context, sum *ScanSummary) error {
 		if info, err := s.inspector.Inspect(entry); err == nil {
 			sk.Description, sk.Version, sk.ContentHash = info.Description, info.Version, info.ContentHash
 		}
+		sk.VaultRef = idx.refFor(sk.IsSymlink, sk.LinkTarget, sk.ContentHash)
 		batch = append(batch, sk)
 		return nil
 	})

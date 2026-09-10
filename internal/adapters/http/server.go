@@ -40,6 +40,16 @@ func NewHandler(svc *app.Service) (http.Handler, error) {
 	mux.HandleFunc("DELETE /api/projects/{id}", s.handleRemoveProject)
 	mux.HandleFunc("POST /api/scan", s.handleScan)
 	mux.HandleFunc("GET /api/doctor", s.handleDoctor)
+	mux.HandleFunc("GET /api/vault", s.handleListVault)
+	mux.HandleFunc("DELETE /api/vault/{name}", s.handleRemoveVault)
+	mux.HandleFunc("POST /api/vault/{name}/install", s.handleInstallVault)
+	mux.HandleFunc("POST /api/vault/{name}/uninstall", s.handleUninstallVault)
+	mux.HandleFunc("POST /api/vault/{name}/update", s.handleUpdateVault)
+	mux.HandleFunc("GET /api/registry/search", s.handleRegistrySearch)
+	mux.HandleFunc("GET /api/registry/trending", s.handleRegistryTrending)
+	mux.HandleFunc("GET /api/registry/curated", s.handleRegistryCurated)
+	mux.HandleFunc("POST /api/registry/add", s.handleRegistryAdd)
+	mux.HandleFunc("POST /api/import-lock", s.handleImportLock)
 	mux.Handle("/", spaHandler(dist))
 	return mux, nil
 }
@@ -225,8 +235,14 @@ func writeError(w http.ResponseWriter, err error) {
 		status = http.StatusNotFound
 	case errors.Is(err, domain.ErrReadOnly), errors.Is(err, domain.ErrAmbiguous):
 		status = http.StatusConflict
-	case errors.Is(err, domain.ErrExists):
+	case errors.Is(err, domain.ErrExists), errors.Is(err, domain.ErrLinked):
 		status = http.StatusConflict
+	case errors.Is(err, domain.ErrRejected):
+		status = http.StatusUnprocessableEntity
+	case errors.Is(err, domain.ErrAuthRequired):
+		status = http.StatusUnauthorized
+	case errors.Is(err, domain.ErrUnsupported):
+		status = http.StatusNotImplemented
 	case errors.Is(err, fs.ErrNotExist):
 		status = http.StatusBadRequest
 	}

@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "data directory (default ~/"+defaultDataDirName+")")
 	rootCmd.AddCommand(versionCmd, serveCmd, doctorCmd, scanCmd, listCmd, agentsCmd, agentCmd,
-		newSkillToggleCmd(true), newSkillToggleCmd(false), projectCmd)
+		newSkillToggleCmd(true), newSkillToggleCmd(false), projectCmd, searchCmd, addCmd, vaultCmd, importLockCmd)
 }
 
 // Execute runs the root command and exits non-zero on error.

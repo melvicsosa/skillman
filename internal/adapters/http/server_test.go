@@ -14,13 +14,21 @@ import (
 	"testing"
 
 	"github.com/melvicsosa/skillman/internal/adapters/agents"
+	"github.com/melvicsosa/skillman/internal/adapters/convert"
 	skillfs "github.com/melvicsosa/skillman/internal/adapters/fs"
 	"github.com/melvicsosa/skillman/internal/adapters/storage/sqlite"
 	"github.com/melvicsosa/skillman/internal/app"
+	"github.com/melvicsosa/skillman/internal/domain"
 )
 
 func newTestServer(t *testing.T) (*httptest.Server, string) {
+	srv, home, _ := newTestServerWithRegistry(t)
+	return srv, home
+}
+
+func newTestServerWithRegistry(t *testing.T) (*httptest.Server, string, *fakeRegistry) {
 	t.Helper()
+	reg := &fakeRegistry{sources: map[string]string{}}
 	home := t.TempDir()
 	t.Setenv(agents.HomeEnv, home)
 	dataDir := filepath.Join(t.TempDir(), "data")
@@ -32,7 +40,9 @@ func newTestServer(t *testing.T) (*httptest.Server, string) {
 	svc := app.New(app.Deps{
 		Agents: agents.Source{}, AgentRepo: sqlite.NewAgentRepo(db), Skills: sqlite.NewSkillRepo(db),
 		Projects: sqlite.NewProjectRepo(db), Scans: sqlite.NewScanRepo(db),
-		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, DataDir: dataDir,
+		Inspector: skillfs.Inspector{}, Quarantine: skillfs.Mover{}, Vault: sqlite.NewVaultRepo(db),
+		Settings: sqlite.NewSettingsRepo(db), Converter: convert.Converter{}, Registries: []domain.Registry{reg},
+		DataDir: dataDir,
 	})
 	h, err := NewHandler(svc)
 	if err != nil {
@@ -40,7 +50,7 @@ func newTestServer(t *testing.T) (*httptest.Server, string) {
 	}
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	return srv, home
+	return srv, home, reg
 }
 
 func writeSkill(t *testing.T, dir, name string) string {

@@ -40,36 +40,46 @@ func (f Frontmatter) Version() string {
 	return ""
 }
 
-// ParseSkillMD splits content into frontmatter and body. When there is no
-// frontmatter it returns an empty Frontmatter, the whole content as body and
-// ErrNoFrontmatter; callers treat that as a spec issue, not a failure.
-func ParseSkillMD(content []byte) (Frontmatter, string, error) {
-	fm := Frontmatter{Metadata: map[string]string{}, Raw: map[string]any{}}
+// SplitFrontmatter separates content into the raw YAML header (without the
+// fences) and the body. When there is no frontmatter it returns a nil
+// header, the whole content as body and ErrNoFrontmatter.
+func SplitFrontmatter(content []byte) (header []byte, body string, err error) {
 	content = bytes.TrimPrefix(content, []byte{0xEF, 0xBB, 0xBF}) // UTF-8 BOM
 	if !bytes.HasPrefix(content, []byte("---")) {
-		return fm, string(content), ErrNoFrontmatter
+		return nil, string(content), ErrNoFrontmatter
 	}
 	rest := content[3:]
 	// The opening fence must be alone on its line.
 	nl := bytes.IndexByte(rest, '\n')
 	if nl < 0 || strings.TrimSpace(string(rest[:nl])) != "" {
-		return fm, string(content), ErrNoFrontmatter
+		return nil, string(content), ErrNoFrontmatter
 	}
 	rest = rest[nl+1:]
 	end := findClosingFence(rest)
 	if end < 0 {
-		return fm, string(content), fmt.Errorf("%w: closing fence missing", ErrNoFrontmatter)
+		return nil, string(content), fmt.Errorf("%w: closing fence missing", ErrNoFrontmatter)
 	}
-	header := rest[:end]
-	body := rest[end:]
-	if nl := bytes.IndexByte(body, '\n'); nl >= 0 {
-		body = body[nl+1:]
+	header = rest[:end]
+	tail := rest[end:]
+	if nl := bytes.IndexByte(tail, '\n'); nl >= 0 {
+		tail = tail[nl+1:]
 	} else {
-		body = nil
+		tail = nil
 	}
+	return header, string(tail), nil
+}
 
+// ParseSkillMD splits content into frontmatter and body. When there is no
+// frontmatter it returns an empty Frontmatter, the whole content as body and
+// ErrNoFrontmatter; callers treat that as a spec issue, not a failure.
+func ParseSkillMD(content []byte) (Frontmatter, string, error) {
+	fm := Frontmatter{Metadata: map[string]string{}, Raw: map[string]any{}}
+	header, body, err := SplitFrontmatter(content)
+	if err != nil {
+		return fm, body, err
+	}
 	if err := yaml.Unmarshal(header, &fm.Raw); err != nil {
-		return fm, string(body), fmt.Errorf("invalid frontmatter YAML: %w", err)
+		return fm, body, fmt.Errorf("invalid frontmatter YAML: %w", err)
 	}
 	if fm.Raw == nil {
 		fm.Raw = map[string]any{}
@@ -82,7 +92,7 @@ func ParseSkillMD(content []byte) (Frontmatter, string, error) {
 			fm.Metadata[k] = stringify(v)
 		}
 	}
-	return fm, string(body), nil
+	return fm, body, nil
 }
 
 // ReadSkillMD parses <dir>/SKILL.md.

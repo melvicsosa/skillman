@@ -1,0 +1,6 @@
+---
+description: Globbed
+globs: "*.ts"
+alwaysApply: false
+---
+Only ts.

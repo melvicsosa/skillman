@@ -2,11 +2,14 @@ import type { Agent } from '../../api/client'
 import { AgentItem } from '../molecules/AgentItem'
 
 export const ALL_AGENTS = 'all'
+export const VIEW_VAULT = 'vault'
+export const VIEW_DISCOVER = 'discover'
 
 type Props = {
   agents: Agent[]
   counts: Record<string, number>
   totalCount: number
+  vaultCount: number
   selected: string
   busyAgent: string | null
   version: string
@@ -14,7 +17,7 @@ type Props = {
   onToggle: (id: string, enabled: boolean) => void
 }
 
-export function Sidebar({ agents, counts, totalCount, selected, busyAgent, version, onSelect, onToggle }: Props) {
+export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busyAgent, version, onSelect, onToggle }: Props) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -23,23 +26,7 @@ export function Sidebar({ agents, counts, totalCount, selected, busyAgent, versi
       </div>
       <div className="sidebar-label">Agents</div>
       <ul className="agent-list">
-        <li
-          className={`agent-item${selected === ALL_AGENTS ? ' is-selected' : ''}`}
-          onClick={() => onSelect(ALL_AGENTS)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              onSelect(ALL_AGENTS)
-            }
-          }}
-          tabIndex={0}
-          role="button"
-          aria-pressed={selected === ALL_AGENTS}
-        >
-          <span className="agent-name">All</span>
-          <span className="agent-count">{totalCount}</span>
-          <span style={{ width: 30 }} aria-hidden="true" />
-        </li>
+        <NavItem id={ALL_AGENTS} label="All" count={totalCount} selected={selected === ALL_AGENTS} onSelect={onSelect} />
         {agents.map((a) => (
           <AgentItem
             key={a.id}
@@ -52,7 +39,42 @@ export function Sidebar({ agents, counts, totalCount, selected, busyAgent, versi
           />
         ))}
       </ul>
+      <div className="sidebar-label">Library</div>
+      <ul className="agent-list">
+        <NavItem id={VIEW_VAULT} label="Vault" count={vaultCount} selected={selected === VIEW_VAULT} onSelect={onSelect} />
+        <NavItem id={VIEW_DISCOVER} label="Discover" selected={selected === VIEW_DISCOVER} onSelect={onSelect} />
+      </ul>
       <div className="sidebar-foot">Disabling an agent hides it from scans. Files are not touched.</div>
     </aside>
+  )
+}
+
+type NavProps = {
+  id: string
+  label: string
+  count?: number
+  selected: boolean
+  onSelect: (id: string) => void
+}
+
+function NavItem({ id, label, count, selected, onSelect }: NavProps) {
+  return (
+    <li
+      className={`agent-item${selected ? ' is-selected' : ''}`}
+      onClick={() => onSelect(id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(id)
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-pressed={selected}
+    >
+      <span className="agent-name">{label}</span>
+      <span className="agent-count">{count ?? ''}</span>
+      <span style={{ width: 30 }} aria-hidden="true" />
+    </li>
   )
 }

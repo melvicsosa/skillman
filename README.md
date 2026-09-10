@@ -17,13 +17,42 @@ skillman version
 ## Usage
 
 ```sh
-skillman doctor          # data dir, database state, detected agents
-skillman serve           # start the UI on :3010 and open the browser
+skillman scan                      # rebuild the skill cache from disk
+skillman list [--agent codex] [--project <path>] [--json]
+skillman enable|disable <skill> --agent <id> [--project <path>]
+skillman agents | agent enable|disable <id>
+skillman project add|list|remove <path>
+skillman doctor [--json]           # spec issues, drift, broken vault links, rejected conversions
+
+# Registry and vault (Phase 2)
+skillman search <query> [--source skillssh|github] [--json]
+skillman add <ref> [--to <agent>]... [--all] [--copy] [--project <path>] [--command]
+#   <ref>: owner/repo[/path][@ref], https://github.com/o/r/tree/<ref>/<path>,
+#          skillssh:<owner>/<repo>/<skill>, a local dir/.mdc/.md/.zip/.tar.gz,
+#          or a .zip/.tar.gz/SKILL.md URL
+skillman vault list [--json]
+skillman vault install <name> --to <agent>... [--project <path>] [--copy] [--command]
+skillman vault uninstall <name> --agent <id> [--project <path>]
+skillman vault update [<name>]     # re-fetch from the recorded source
+skillman vault remove <name> [--force]
+skillman import-lock               # register ~/.agents/.skill-lock.json skills in the vault
+
+skillman serve                     # start the UI on :3010 and open the browser
 skillman serve --port 4000 --no-open
 skillman --data-dir /path/to/dir doctor
 ```
 
-Data lives in `~/.skillman` (SQLite database, quarantine, vault).
+Data lives in `~/.skillman` (SQLite database, quarantine, vault). Downloaded
+skills are stored once in `~/.skillman/vault/<name>` with a
+`<name>.vault.json` provenance sidecar and symlinked into agents (or copied
+with `--copy`). Sources that are not spec skills (Cursor `.mdc` rules, Claude
+and OpenCode commands, Claude plugins) are normalized on the way in.
+
+Tokens are optional: `GITHUB_TOKEN` (or the `github_token` setting) raises
+GitHub rate limits; `SKILLSSH_TOKEN` (or `skillssh_token`, a Vercel OIDC
+token) unlocks the skills.sh v1 API (trending, curated, file snapshots).
+Without it, search uses the public legacy endpoint and skill files are
+fetched from the source GitHub repository.
 
 ## Development
 
