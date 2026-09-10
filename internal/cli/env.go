@@ -10,6 +10,7 @@ import (
 	"github.com/melvicsosa/skillman/internal/adapters/agents"
 	"github.com/melvicsosa/skillman/internal/adapters/convert"
 	skillfs "github.com/melvicsosa/skillman/internal/adapters/fs"
+	"github.com/melvicsosa/skillman/internal/adapters/picker"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/github"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/local"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/marketplace"
@@ -67,6 +68,7 @@ func newRuntime(ctx context.Context) (*env, error) {
 		Registries:     registries,
 		ServiceManager: service.New(launchAgentsDir(), dir),
 		Usage:          agents.ClaudeUsage{},
+		Picker:         picker.New(),
 		DataDir:        dir,
 	})
 	return &env{dataDir: dir, db: db, svc: svc}, nil

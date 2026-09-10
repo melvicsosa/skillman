@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { Project } from '../../api/client'
+import { api, ApiError, type Project } from '../../api/client'
 import { errMsg } from '../../hooks/useToast'
 import { Alert } from '../atoms/Alert'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { Spinner } from '../atoms/Spinner'
 import { InlineConfirm } from './InlineConfirm'
+
+/** Set once the server reports it has no native folder dialog (501). */
+let pickerUnsupported = false
 
 type Props = {
   projects: Project[]
@@ -23,6 +26,8 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<number | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [canPick, setCanPick] = useState(!pickerUnsupported)
   const wrapRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +66,28 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
       setError(errMsg(err))
     } finally {
       setAdding(false)
+    }
+  }
+
+  const pickFolder = async () => {
+    setPicking(true)
+    setError(null)
+    try {
+      const path = await api.pickFolder()
+      if (path) {
+        setRoot(path)
+        inputRef.current?.focus()
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 501) {
+        pickerUnsupported = true
+        setCanPick(false)
+        inputRef.current?.focus()
+      } else {
+        setError(errMsg(err))
+      }
+    } finally {
+      setPicking(false)
     }
   }
 
@@ -108,15 +135,30 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
           >
             <label className="field">
               <span>Project root</span>
-              <input
-                ref={inputRef}
-                className="input"
-                value={root}
-                onChange={(e) => setRoot(e.target.value)}
-                placeholder="/absolute/path/to/project"
-                spellCheck={false}
-                disabled={adding}
-              />
+              <span className={canPick ? 'input-group' : undefined}>
+                <input
+                  ref={inputRef}
+                  className="input"
+                  value={root}
+                  onChange={(e) => setRoot(e.target.value)}
+                  placeholder="/absolute/path/to/project"
+                  spellCheck={false}
+                  disabled={adding}
+                />
+                {canPick && (
+                  <button
+                    type="button"
+                    className="input-addon"
+                    aria-label="Choose folder…"
+                    title="Choose folder…"
+                    aria-busy={picking}
+                    disabled={picking || adding}
+                    onClick={() => void pickFolder()}
+                  >
+                    {picking ? <Spinner /> : <Icon name="folder" size={16} />}
+                  </button>
+                )}
+              </span>
             </label>
             <div className="popover-actions">
               <Button variant="ghost" onClick={() => close(true)} disabled={adding}>

@@ -19,7 +19,16 @@ var (
 	ErrAuthRequired = errors.New("authentication required")
 	// ErrUnsupported is returned when a registry does not offer an operation.
 	ErrUnsupported = errors.New("unsupported")
+	// ErrCanceled is returned when the user dismisses an interactive prompt.
+	ErrCanceled = errors.New("canceled")
 )
+
+// FolderPicker asks the user to choose a folder through a native dialog.
+// It returns ErrCanceled when the dialog is dismissed and ErrUnsupported
+// on platforms without a native picker.
+type FolderPicker interface {
+	PickFolder(ctx context.Context, prompt string) (path string, err error)
+}
 
 // SkillFilter narrows a skill listing. Zero values mean "no constraint".
 type SkillFilter struct {

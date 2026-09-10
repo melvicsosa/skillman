@@ -331,6 +331,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ root }),
     }),
+  /** Opens the native folder dialog on the server; null when canceled. */
+  pickFolder: async (): Promise<string | null> => {
+    const res = await request<{ path: string } | undefined>('/api/fs/pick-folder', {
+      method: 'POST',
+      body: '{}',
+    })
+    return res?.path ?? null
+  },
   removeProject: (id: number) => request<void>(`/api/projects/${id}`, { method: 'DELETE' }),
   scan: (project?: string) =>
     request<ScanSummary>(project ? `/api/scan?project=${encodeURIComponent(project)}` : '/api/scan', {

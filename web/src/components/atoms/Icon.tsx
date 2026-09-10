@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type IconName = 'vault' | 'discover' | 'settings' | 'sun' | 'moon' | 'check' | 'chevron' | 'plus' | 'close'
+export type IconName = 'vault' | 'discover' | 'settings' | 'sun' | 'moon' | 'check' | 'chevron' | 'plus' | 'close' | 'folder'
 
 const paths: Record<IconName, ReactNode> = {
   vault: (
@@ -34,6 +34,7 @@ const paths: Record<IconName, ReactNode> = {
   chevron: <path d="m4.5 6.5 3.5 3.5 3.5-3.5" />,
   plus: <path d="M8 3.5v9M3.5 8h9" />,
   close: <path d="m4.5 4.5 7 7M11.5 4.5l-7 7" />,
+  folder: <path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h2.6l1.4 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z" />,
 }
 
 type Props = {

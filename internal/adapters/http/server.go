@@ -71,6 +71,7 @@ func NewHandler(svc *app.Service) (http.Handler, error) {
 	mux.HandleFunc("POST /api/service/uninstall", s.handleServiceUninstall)
 	mux.HandleFunc("POST /api/service/restart", s.handleServiceRestart)
 	mux.HandleFunc("GET /api/usage", s.handleUsage)
+	mux.HandleFunc("POST /api/fs/pick-folder", s.handlePickFolder)
 	mux.Handle("/", spaHandler(dist))
 	return mux, nil
 }

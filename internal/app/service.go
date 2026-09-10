@@ -29,6 +29,7 @@ type Service struct {
 	registries []domain.Registry
 	serviceMgr domain.ServiceManager
 	usage      domain.UsageSource
+	picker     domain.FolderPicker
 	probe      HealthProbe
 	dataDir    string
 }
@@ -52,6 +53,8 @@ type Deps struct {
 	ServiceManager domain.ServiceManager
 	// Usage is optional; nil disables usage telemetry.
 	Usage domain.UsageSource
+	// Picker is optional; nil means no native folder dialog is available.
+	Picker domain.FolderPicker
 	// Probe checks whether a server answers on a port; nil uses ProbeHealth.
 	Probe   HealthProbe
 	DataDir string
@@ -66,7 +69,7 @@ func New(d Deps) *Service {
 	return &Service{
 		agents: d.Agents, agentRepo: d.AgentRepo, skills: d.Skills, projects: d.Projects,
 		scans: d.Scans, inspector: d.Inspector, quarantine: d.Quarantine, vault: d.Vault, settings: d.Settings,
-		converter: d.Converter, registries: d.Registries, serviceMgr: d.ServiceManager, usage: d.Usage, probe: probe, dataDir: d.DataDir,
+		converter: d.Converter, registries: d.Registries, serviceMgr: d.ServiceManager, usage: d.Usage, picker: d.Picker, probe: probe, dataDir: d.DataDir,
 	}
 }
 
