@@ -17,7 +17,8 @@ import (
 	"github.com/spf13/cobra"
 
 	httpadapter "github.com/melvicsosa/skillman/internal/adapters/http"
-	"github.com/melvicsosa/skillman/internal/adapters/storage/sqlite"
+	"github.com/melvicsosa/skillman/internal/app"
+	"github.com/melvicsosa/skillman/internal/domain"
 )
 
 const defaultPort = 3010
@@ -42,17 +43,25 @@ func runServe(cmd *cobra.Command, _ []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	dir, err := resolveDataDir()
+	rt, err := newRuntime(ctx)
 	if err != nil {
 		return err
 	}
-	db, err := sqlite.Open(ctx, dbPath(dir))
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+	defer rt.Close()
+	dir := rt.dataDir
 
-	handler, err := httpadapter.NewHandler()
+	// First run: populate the cache so the UI has something to show.
+	if skills, err := rt.svc.ListSkills(ctx, domain.SkillFilter{}); err != nil {
+		return err
+	} else if len(skills) == 0 {
+		sum, err := rt.svc.Scan(ctx, app.ScanOptions{})
+		if err != nil {
+			return err
+		}
+		printScanSummary(cmd, sum)
+	}
+
+	handler, err := httpadapter.NewHandler(rt.svc)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,15 @@ import (
 	"github.com/melvicsosa/skillman/internal/domain"
 )
 
+// HomeEnv overrides the directory "~" expands to. Tests and fixture runs
+// point it at a temporary tree so the real agent directories are never read
+// or modified.
+const HomeEnv = "SKILLMAN_HOME"
+
+// PluginsAgentID is the agent whose skills come from the Claude plugin cache
+// and are therefore read-only.
+const PluginsAgentID domain.AgentID = "claude"
+
 // Spec is the static description of one supported agent. Paths starting
 // with "~" are expanded relative to the current user's home at runtime.
 type Spec struct {
@@ -27,7 +36,7 @@ var Registry = []Spec{
 		ProjectDirs: []string{".claude/skills"},
 	},
 	{
-		ID: "claude", Name: "Claude (plugins)",
+		ID: PluginsAgentID, Name: "Claude (plugins)",
 		GlobalDirs:  []string{"~/.claude/plugins/cache"},
 		ProjectDirs: []string{},
 	},
@@ -68,10 +77,19 @@ func Lookup(id domain.AgentID) (Spec, bool) {
 	return Spec{}, false
 }
 
-// ExpandHome replaces a leading "~" with the user's home directory.
+// Home returns the directory "~" expands to: $SKILLMAN_HOME when set,
+// otherwise the current user's home.
+func Home() (string, error) {
+	if h := os.Getenv(HomeEnv); h != "" {
+		return h, nil
+	}
+	return os.UserHomeDir()
+}
+
+// ExpandHome replaces a leading "~" with the home directory (see Home).
 func ExpandHome(p string) string {
 	if p == "~" || strings.HasPrefix(p, "~/") {
-		home, err := os.UserHomeDir()
+		home, err := Home()
 		if err != nil {
 			return p
 		}
@@ -85,6 +103,16 @@ func (s Spec) ResolvedGlobalDirs() []string {
 	out := make([]string, 0, len(s.GlobalDirs))
 	for _, d := range s.GlobalDirs {
 		out = append(out, ExpandHome(d))
+	}
+	return out
+}
+
+// ResolvedProjectDirs returns the agent's project dirs as absolute paths
+// under root.
+func (s Spec) ResolvedProjectDirs(root string) []string {
+	out := make([]string, 0, len(s.ProjectDirs))
+	for _, d := range s.ProjectDirs {
+		out = append(out, filepath.Join(root, d))
 	}
 	return out
 }
@@ -110,4 +138,19 @@ func (s Spec) ToDomain() domain.Agent {
 		ProjectDirs:     append([]string(nil), s.ProjectDirs...),
 		SupportsSymlink: true,
 	}
+}
+
+// AllProjectDirs returns the union of every agent's relative project dirs.
+func AllProjectDirs() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, s := range Registry {
+		for _, d := range s.ProjectDirs {
+			if !seen[d] {
+				seen[d] = true
+				out = append(out, d)
+			}
+		}
+	}
+	return out
 }

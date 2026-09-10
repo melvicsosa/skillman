@@ -27,7 +27,8 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", "", "data directory (default ~/"+defaultDataDirName+")")
-	rootCmd.AddCommand(versionCmd, serveCmd, doctorCmd)
+	rootCmd.AddCommand(versionCmd, serveCmd, doctorCmd, scanCmd, listCmd, agentsCmd, agentCmd,
+		newSkillToggleCmd(true), newSkillToggleCmd(false), projectCmd)
 }
 
 // Execute runs the root command and exits non-zero on error.
@@ -56,3 +57,9 @@ func resolveDataDir() (string, error) {
 }
 
 func dbPath(dir string) string { return filepath.Join(dir, dbFileName) }
+
+// dirExists reports whether p is an existing directory (symlinks followed).
+func dirExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && info.IsDir()
+}
