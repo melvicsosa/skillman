@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/melvicsosa/skillman/internal/brewpath"
 	"github.com/melvicsosa/skillman/internal/domain"
 )
 
@@ -93,6 +94,9 @@ func (s *Service) ServiceInstall(ctx context.Context) (ServiceInfo, error) {
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
+	// Persist the Homebrew opt link, not the versioned Cellar path that
+	// `brew upgrade` deletes.
+	exe = brewpath.Stable(exe)
 	spec := domain.ServiceSpec{
 		Executable: exe,
 		Args:       []string{"--data-dir", s.dataDir, "serve", "--no-open"},

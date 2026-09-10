@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/melvicsosa/skillman/internal/brewpath"
 )
 
 // Environment variables the tray honours.
@@ -55,10 +57,14 @@ func Load(dataDirFlag string) (Config, error) {
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
+	// Keep paths stable across `brew upgrade` (the login item persists exe,
+	// and the tray outlives the Cellar dir of the version it started from).
+	exe = brewpath.Stable(exe)
 	bin, err := FindSkillman(filepath.Dir(exe))
 	if err != nil {
 		return Config{}, err
 	}
+	bin = brewpath.Stable(bin)
 	return Config{DataDir: dir, Skillman: bin, LaunchAgentsDir: LaunchAgentsDir(), Executable: exe}, nil
 }
 
