@@ -22,7 +22,7 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
   return (
     <aside className="sidebar">
       <div className="brand">
-        <img className="brand-icon" src="/favicon.png" width={22} height={22} alt="" aria-hidden="true" />
+        <img className="brand-icon" src="/icon-512.png" width={22} height={22} alt="" aria-hidden="true" />
         <span className="brand-name">skillman</span>
         <span className="brand-version">{version}</span>
       </div>
