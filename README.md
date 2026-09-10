@@ -1,220 +1,198 @@
-<p align="center"><img src="assets/brand/banner.png" width="720" alt="skillman"></p>
+<a id="top"></a>
+<div align="center">
+<img src="assets/brand/banner.png" width="720" alt="skillman" />
+<h1>skillman</h1>
+<p><strong>One place to see, switch and share the skills of every AI coding agent on your machine.</strong></p>
+<p>
+<a href="https://github.com/melvicsosa/skillman/releases"><img src="https://img.shields.io/github/v/release/melvicsosa/skillman?style=for-the-badge&labelColor=1A1218&color=9f7aea" alt="Release"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-9f7aea?style=for-the-badge&labelColor=1A1218" alt="License: MIT"></a>
+<img src="https://img.shields.io/badge/Go-1.26+-6d28d9?style=for-the-badge&labelColor=1A1218&logo=go&logoColor=9f7aea" alt="Go 1.26+">
+<img src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux-6d28d9?style=for-the-badge&labelColor=1A1218" alt="Platform">
+</p>
+</div>
 
-# skillman
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
 
-Agent Skill Management Tool
+### Quick start
 
-One Go binary that discovers every agent skill on your machine (Claude Code,
-Claude plugins, Codex, Cursor, Gemini CLI, Antigravity, OpenCode), lets you
-enable or disable them, keeps a vault of downloaded skills, and serves a local
-UI on `http://localhost:3010`. See [PLAN.md](PLAN.md) for the design.
+```sh
+brew install melvicsosa/tap/skillman   # 1. install
+skillman scan                          # 2. discover the skills on disk
+skillman serve                         # 3. open the UI on http://localhost:3010
+```
+
+<p align="center"><img src="assets/screenshot-skills.png" width="900" alt="skillman Skills view"></p>
+
+<details>
+<summary><b>Table of contents</b></summary>
+
+- [What is skillman?](#what-is-skillman)
+- [What you get](#what-you-get)
+- [Which agents it works with](#which-agents-it-works-with)
+- [Install](#install)
+- [How it works](#how-it-works)
+- [Everyday commands](#everyday-commands)
+- [Keeping it running](#keeping-it-running)
+- [Development](#development)
+- [License](#license)
+
+</details>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## What is skillman?
+
+Every AI coding agent keeps its own skills folder. None of them can switch a single skill off, and copies of the same skill drift apart across agents. skillman is one Go binary that finds every skill on your machine, lets you enable or disable each one per agent, keeps one copy in a vault, and serves a local UI.
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>Before</b><br><br><i>"I have the same skill in four folders, one of them is outdated, and the only way to turn one off is to delete it."</i></td>
+<td width="50%" valign="top"><b>After</b><br><br><i>One list of every skill per agent, a switch for each one, a single vault copy linked into every agent, and a doctor that tells you when copies drift.</i></td>
+</tr>
+</table>
+
+### Who it's for
+
+- Developers who run **more than one AI coding agent** and want the same skills everywhere.
+- Anyone who wants to **turn a skill off without deleting it**, per agent or per project.
+- Teams that publish skills and want to **pull them from skills.sh, GitHub or Claude marketplaces** in one step.
+
+### What it is not
+
+> [!IMPORTANT]
+> skillman **never installs an agent** and **never deletes skill files**. Disabling a skill moves its folder to a quarantine directory inside `~/.skillman`; enabling it moves the folder back.
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## What you get
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>Skills</b><br>Lists skills per agent, globally or per project; disable moves a skill to quarantine and enable moves it back.</td>
+<td width="50%" valign="top"><b>Vault</b><br>Downloaded skills live once in <code>~/.skillman/vault/&lt;name&gt;</code> and are symlinked (or copied) into agents.</td>
+</tr>
+<tr>
+<td valign="top"><b>Discover</b><br>Searches skills.sh, GitHub and Claude plugin marketplaces; adds skills by reference, URL or local path.</td>
+<td valign="top"><b>Doctor and drift</b><br>Reports spec issues, broken vault links and copies of the same skill that differ; repairs drift from a chosen source.</td>
+</tr>
+<tr>
+<td valign="top"><b>Sync</b><br>Fans vault entries out to every enabled, writable agent; per-entry auto-sync runs on each scan.</td>
+<td valign="top"><b>Export as Claude plugin</b><br>Writes a <code>.claude-plugin/plugin.json</code> plus <code>skills/</code> directory from selected vault skills.</td>
+</tr>
+<tr>
+<td valign="top"><b>Settings and service</b><br>Port, registry tokens, marketplace list, and a launchd login service on macOS.</td>
+<td valign="top"><b>Menu bar app</b><br>Shows the server state, opens the UI, starts, stops and restarts the server, and manages launch at login.</td>
+</tr>
+</table>
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## Which agents it works with
+
+| Agent | Global skills folder |
+| --- | --- |
+| **Claude Code** | `~/.claude/skills` |
+| **Claude plugins** | `~/.claude/plugins/cache` |
+| **Codex** | `~/.agents/skills` |
+| **Cursor** | `~/.cursor/skills` |
+| **Gemini CLI** | `~/.gemini/skills` |
+| **Antigravity** | `~/.gemini/config/skills` |
+| **OpenCode** | `~/.config/opencode/skills` |
+
+> [!NOTE]
+> The Claude plugin cache is **read-only**: skillman lists those skills but never installs into, syncs to, or moves anything there.
+> Every global and project path per agent: **[Agents](docs/agents.md)**.
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
 
 ## Install
 
 ```sh
-brew install melvicsosa/tap/skillman
-skillman version
+brew install melvicsosa/tap/skillman                              # Homebrew, macOS and Linux
+go install github.com/melvicsosa/skillman/cmd/skillman@latest    # from source, Go 1.26+
+skillman version                                                 # expected: prints a version number
 ```
 
-## Usage
+| Platform | CLI and `serve` | `service` | Menu bar app |
+| --- | --- | --- | --- |
+| macOS | Yes | Yes (launchd LaunchAgent) | Yes (`skillman-tray`, ships with the Homebrew formula) |
+| Linux | Yes (release binaries for amd64 and arm64) | No, reports unsupported | No |
+| Windows | Builds from source; no release binaries | No, reports unsupported | No |
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## How it works
+
+```mermaid
+flowchart LR
+  F[CLI / Web UI / Menu bar] --> S
+  A[Agent skill folders] <--> S["skillman<br/>scanner · SQLite cache · vault · doctor"]
+  S <--> R["Registries<br/>skills.sh · GitHub · marketplaces"]
+```
+
+- **Scan** walks every agent folder and rebuilds the SQLite cache in `~/.skillman`.
+- **Vault** keeps one copy of each downloaded skill and symlinks (or copies) it into agents.
+- **Doctor** detects spec issues, broken links and copies that drifted apart, and can repair them.
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## Everyday commands
 
 ```sh
-skillman scan                      # rebuild the skill cache from disk
-skillman list [--agent codex] [--project <path>] [--json]
-skillman enable|disable <skill> --agent <id> [--project <path>]
-skillman agents | agent enable|disable <id>
-skillman project add|list|remove <path>
-skillman doctor [--json]           # spec issues, drift, broken vault links, rejected conversions
-
-# Registry and vault (Phase 2)
-skillman search <query> [--source skillssh|github|marketplace] [--json]
-skillman add <ref> [--to <agent>]... [--all] [--copy] [--project <path>] [--command]
-#   <ref>: owner/repo[/path][@ref], https://github.com/o/r/tree/<ref>/<path>,
-#          skillssh:<owner>/<repo>/<skill>, marketplace:<owner>/<repo>/<plugin>,
-#          a local dir/.mdc/.md/.zip/.tar.gz, or a .zip/.tar.gz/SKILL.md URL
-skillman vault list [--json]
-skillman vault install <name> --to <agent>... [--project <path>] [--copy] [--command]
-skillman vault uninstall <name> --agent <id> [--project <path>]
-skillman vault update [<name>]     # re-fetch from the recorded source
-skillman vault remove <name> [--force]
-skillman import-lock               # register ~/.agents/.skill-lock.json skills in the vault
-
-# Sync, drift repair and export (Phase 4)
-skillman sync [<name>...] [--all] [--project <path>] [--dry-run]
-skillman vault sync-mode <name> on|off    # fan out on every scan
-skillman vault adopt <name> --from <agent> [--link]
-skillman doctor --fix-drift <name> --from <agent|vault> [--to <agent>]... [--project <path>]
-skillman export plugin <out-dir> --name <plugin> [--version 0.1.0] [--description ...] <skill>...
-
-# Settings and background service (Phase 3)
-skillman config get|set port|github_token|skillssh_token|marketplaces [<value>]
-skillman service install           # launchd LaunchAgent, runs `serve` at login
-skillman service status [--json]   # installed? running? pid, port, answering?
-skillman service start|stop|restart|uninstall
-
-skillman serve                     # start the UI (port setting, default 3010) and open the browser
-skillman serve --port 4000 --no-open
-skillman --data-dir /path/to/dir doctor
+skillman scan                                   # rebuild the cache from disk
+skillman list --agent claude-code               # skills for one agent (add --json for scripts)
+skillman disable <skill> --agent codex          # move to quarantine
+skillman enable  <skill> --agent codex          # move back
+skillman search <query>                         # skills.sh, GitHub and marketplaces
+skillman add owner/repo/path --all              # download into the vault and link into every agent
+skillman vault install <name> --to cursor       # link a vault skill into one agent
+skillman sync --all                             # fan vault entries out to every enabled agent
+skillman doctor                                 # spec issues, broken links, drift
+skillman serve                                  # web UI on http://localhost:3010
 ```
 
-## UI
+> Full reference, every flag and the `<ref>` formats: **[Commands](docs/commands.md)**.
 
-`skillman serve` opens a local web app:
+<div align="right"><a href="#top">Back to top</a></div>
 
-- **Skills** per agent, global or per project, with enable/disable toggles,
-  symlink/vault/drift/invalid flags and a Doctor panel.
-- **Used N×** column and "most used" sort from Claude Code's own telemetry
-  (`~/.claude.json`, `skillUsage`), also exposed as `GET /api/usage` and the
-  `USED` column of `skillman list`.
-- **Vault** to install, update, sync and remove downloaded skills across
-  agents, with per-entry auto-sync, row selection and "Export as Claude
-  plugin".
-- **Discover** to search skills.sh, GitHub and Claude marketplaces, browse
-  trending and curated lists, and add by reference.
-- **Settings** for the port, write-only registry tokens, the marketplace
-  list and the background service (install, restart, uninstall). Changing
-  the port while the service runs offers a one-click restart.
-- Deep links: `/`, `/agent/<id>`, `/vault`, `/discover` and `/settings`
-  select the matching view (the menu bar app opens `/settings`).
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
 
-## Sync
+## Keeping it running
 
-`skillman sync` makes sure vault entries are installed in every enabled,
-writable agent (the read-only Claude plugin cache is skipped). Entries are
-symlinked into the agent dirs, or copied when they were installed with
-`--copy`. A skill directory of the same name that is not the vault entry is
-reported as a **conflict** and never overwritten:
+On macOS, `skillman service install` writes a launchd LaunchAgent that runs `skillman serve --no-open` at login and restarts it on failure; `service status|start|stop|restart|uninstall` manage it.
+The menu bar app (`skillman tray`, installed with the Homebrew formula) shows the server state, opens the UI, starts, stops and restarts the server, switches the port, and manages its own launch-at-login item.
+Logs land in `~/.skillman/logs/`. On Linux, run `skillman serve` from your own supervisor; `service` reports unsupported.
 
-```sh
-skillman sync --all --dry-run        # show linked / already / conflict per agent
-skillman sync my-skill other-skill   # only these entries
-skillman sync --all --project ~/code/app
-skillman vault sync-mode my-skill on # every `skillman scan` fans this entry out
-```
+<div align="right"><a href="#top">Back to top</a></div>
 
-`POST /api/sync` and `POST /api/vault/{name}/sync` do the same from the UI
-("Sync all" and the per-row "Sync" button); the auto-sync flag is
-`PATCH /api/vault/{name} {"autoSync": true}` and is stored in the entry's
-`.vault.json` sidecar, so it survives a database rebuild.
-
-## Drift repair
-
-`skillman doctor` reports **drift** when copies of the same skill differ.
-Each drift group lists its copies with hashes and whether they can be
-repaired (symlinks into the vault and read-only plugin copies cannot).
-Pick the copy that wins and overwrite the others in place:
-
-```sh
-skillman doctor --fix-drift my-skill --from vault          # the vault entry wins
-skillman doctor --fix-drift my-skill --from codex --to cursor
-skillman vault adopt my-skill --from codex [--link]        # not in the vault yet? adopt it first
-```
-
-`vault adopt` copies an agent's skill into the vault as a `local` entry
-(ref = original path); with `--link` the agent directory becomes a symlink
-into the vault. The UI Doctor panel offers "Repair from …" and "Adopt into
-vault" per drift group (`POST /api/doctor/drift/{name}/repair`,
-`POST /api/vault/adopt`).
-
-## Marketplaces
-
-Claude plugin marketplaces are GitHub repositories with a
-`.claude-plugin/marketplace.json` listing plugins (`name`, `description`
-and a `source` that is either a path inside the repository or a
-`{source, url|repo, path, ref, sha}` object). skillman resolves a plugin to
-its GitHub location, downloads it and stores every `skills/<name>` in the
-vault:
-
-```sh
-skillman search --source marketplace mcp
-skillman add marketplace:anthropics/claude-plugins-official/plugin-dev --all
-skillman config set marketplaces anthropics/claude-plugins-official,my-org/marketplace
-```
-
-Adding a marketplace repository itself (`skillman add owner/repo`) is
-rejected with the list of plugins it contains.
-
-## Claude plugin export
-
-Turn vault skills into a Claude Code plugin directory:
-
-```sh
-skillman export plugin ./out --name my-plugin --version 0.1.0 --description "Team skills" skill-a skill-b
-```
-
-writes `out/my-plugin/.claude-plugin/plugin.json` (`name`, `version`,
-`description`), byte-for-byte copies under `out/my-plugin/skills/<name>/`
-and a `README.md` listing them. In the Vault view select rows and use
-"Export as Claude plugin" (`POST /api/vault/export`).
-
-## Background service
-
-`skillman service install` writes
-`~/Library/LaunchAgents/com.melvicsosa.skillman.plist` pointing at the
-current binary (`skillman --data-dir <dir> serve --no-open`, `RunAtLoad`,
-restarted on failure) and loads it with `launchctl bootstrap`. Logs go to
-`~/.skillman/logs/`. `service restart` (and the UI button) run
-`launchctl kickstart -k`, so a port change takes effect immediately; the
-server also writes `~/.skillman/serve.pid` and explains who holds the port
-when it is already taken. Linux and Windows report the service as
-unsupported; `serve` works everywhere.
-
-Data lives in `~/.skillman` (SQLite database, quarantine, vault). Downloaded
-skills are stored once in `~/.skillman/vault/<name>` with a
-`<name>.vault.json` provenance sidecar and symlinked into agents (or copied
-with `--copy`). Sources that are not spec skills (Cursor `.mdc` rules, Claude
-and OpenCode commands, Claude plugins) are normalized on the way in.
-
-Tokens are optional and can be stored with `skillman config set` or in the
-Settings view: `GITHUB_TOKEN` (or the `github_token` setting) raises
-GitHub rate limits; `SKILLSSH_TOKEN` (or `skillssh_token`, a Vercel OIDC
-token) unlocks the skills.sh v1 API (trending, curated, file snapshots).
-Without it, search uses the public legacy endpoint and skill files are
-fetched from the source GitHub repository.
-
-## Menu bar app
-
-`skillman-tray` is a macOS status item (ships in the macOS release archive
-and with `brew install melvicsosa/tap/skillman`). Start it with
-`skillman tray`; it shows the server state (`Running on :3010 · v0.3.0`,
-`Stopped`, `Service not installed`) and offers **Open skillman**,
-**Start / Stop / Restart** (through launchd when the service is installed,
-otherwise a detached `skillman serve --no-open` tracked by
-`~/.skillman/serve.pid`), **Install / Uninstall background service**, a
-**Port** submenu (3010, 3011, 3012, 4010, 8010 or Custom… in Settings; a
-change restarts the server) and a **Launch at login** checkbox that writes
-`~/Library/LaunchAgents/com.melvicsosa.skillman-tray.plist` (`RunAtLoad`,
-no `KeepAlive`). `skillman tray --login` / `--no-login` toggle that item from
-the shell (`skillman-tray --install-login` / `--uninstall-login`). The tray
-honours `--data-dir` and `SKILLMAN_DATA_DIR`, and finds `skillman` next to
-its own binary or in `PATH`.
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
 
 ## Development
 
 Requirements: Go 1.26+, Node 22+, pnpm.
 
 ```sh
-make web     # install and build the frontend into web/dist
-make build   # build ./dist/skillman (and ./dist/skillman-tray on macOS)
-make build-tray # build the macOS menu bar app only (needs CGO)
-make test    # go test ./...
-make vet     # go vet ./...
-make lint    # golangci-lint if installed, otherwise go vet
-make run     # go run ./cmd/skillman serve
+make web         # pnpm install and build the frontend into web/dist
+make build       # ./dist/skillman (and ./dist/skillman-tray on macOS)
+make build-tray  # macOS menu bar app only (needs CGO)
+make test        # go test ./...
+make lint        # golangci-lint if installed, otherwise go vet
+make run         # go run ./cmd/skillman serve
 ```
 
-The Go build embeds `web/dist`. A placeholder `web/dist/index.html` is
-committed so `go build` works before the frontend has been built. For
-frontend development run `pnpm dev` inside `web/`; API calls are proxied to
-`localhost:3010`.
+The Go binary embeds `web/dist`; a placeholder `web/dist/index.html` is committed so `go build` works before the frontend is built. For frontend work run `pnpm dev` inside `web/`; API calls are proxied to `localhost:3010`. Releases are built by GoReleaser on `v*` tags and published to GitHub Releases and the `melvicsosa/homebrew-tap` tap.
 
-## Release
-
-Releases are built by GoReleaser on `v*` tags (on a macOS runner, because
-`skillman-tray` needs CGO; the CGO-free `skillman` Linux binaries are
-cross-compiled from there) and published to GitHub Releases and the
-`melvicsosa/homebrew-tap` Homebrew tap. The darwin archives contain both
-binaries; the linux archives only `skillman`.
+<div align="right"><a href="#top">Back to top</a></div>
 
 ## License
 
