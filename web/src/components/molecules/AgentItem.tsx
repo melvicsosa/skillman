@@ -27,7 +27,7 @@ export function AgentItem({ agent, count, selected, busy, onSelect, onToggle }: 
       aria-pressed={selected}
     >
       <span className="agent-name" title={agent.globalDirs[0]}>
-        <span className={`agent-dot${agent.exists ? ' is-found' : ''}`} aria-hidden="true" />
+        <span className={`agent-dot${agent.enabled && agent.exists ? ' is-on' : ''}`} aria-hidden="true" />
         {agent.name}
       </span>
       <span className="agent-count">{count}</span>

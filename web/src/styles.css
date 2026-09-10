@@ -9,9 +9,12 @@
   --ink-faint: #7a7a72;
   --line: #2b2b28;
   --line-strong: #3d3d39;
-  --accent: #6fbf94;
-  --accent-ink: #0f1f17;
-  --accent-soft: #1c2f25;
+  /* Violet from the brand gradient; tuned for WCAG AA on dark surfaces. */
+  --accent: #9f7aea;
+  --accent-ink: #170d2e;
+  --accent-soft: #2a2140;
+  /* Status green for "agent on" indicators (decorative, paired with toggles). */
+  --ok: #6fbf94;
   --warn: #d9a441;
   --warn-soft: #2f2712;
   --danger: #e5675c;
@@ -20,7 +23,7 @@
   --info: #8fb0e0;
   --toggle-knob: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.55);
-  --focus-ring: #6fbf94;
+  --focus-ring: #9f7aea;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
   --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.4);
   --radius: 6px;
@@ -42,9 +45,10 @@
   --ink-faint: #74746d;
   --line: #e2e1dc;
   --line-strong: #c9c8c1;
-  --accent: #2b6a4a;
+  --accent: #6d28d9;
   --accent-ink: #ffffff;
-  --accent-soft: #e3efe8;
+  --accent-soft: #efe9fd;
+  --ok: #6fbf94;
   --warn: #8a5d0c;
   --warn-soft: #f6ecd6;
   --danger: #b42318;
@@ -53,7 +57,7 @@
   --info: #35547f;
   --toggle-knob: #ffffff;
   --backdrop: rgba(20, 20, 18, 0.35);
-  --focus-ring: #2b6a4a;
+  --focus-ring: #6d28d9;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
   --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.12);
   color-scheme: light;
@@ -70,9 +74,10 @@
     --ink-faint: #74746d;
     --line: #e2e1dc;
     --line-strong: #c9c8c1;
-    --accent: #2b6a4a;
+    --accent: #6d28d9;
     --accent-ink: #ffffff;
-    --accent-soft: #e3efe8;
+    --accent-soft: #efe9fd;
+    --ok: #6fbf94;
     --warn: #8a5d0c;
     --warn-soft: #f6ecd6;
     --danger: #b42318;
@@ -80,7 +85,7 @@
     --info-soft: #e6ecf5;
     --info: #35547f;
     --backdrop: rgba(20, 20, 18, 0.35);
-    --focus-ring: #2b6a4a;
+    --focus-ring: #6d28d9;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
     --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.12);
     color-scheme: light;
@@ -169,6 +174,13 @@ button {
   font-size: 12px;
 }
 
+.sidebar-divider {
+  height: 1px;
+  margin: 12px 16px;
+  border: 0;
+  background: var(--line);
+}
+
 .sidebar-label {
   padding: 10px 20px 6px;
   font-size: 11px;
@@ -227,8 +239,8 @@ button {
   flex: none;
 }
 
-.agent-dot.is-found {
-  background: var(--accent);
+.agent-dot.is-on {
+  background: var(--ok);
 }
 
 .agent-count {

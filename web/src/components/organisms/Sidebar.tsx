@@ -42,6 +42,7 @@ export function Sidebar({ agents, counts, totalCount, vaultCount, selected, busy
           />
         ))}
       </ul>
+      <hr className="sidebar-divider" />
       <div className="sidebar-label">Library</div>
       <ul className="agent-list">
         <NavItem id={VIEW_VAULT} icon="vault" label="Vault" count={vaultCount} selected={selected === VIEW_VAULT} onSelect={onSelect} />
