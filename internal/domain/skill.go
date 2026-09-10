@@ -92,6 +92,9 @@ const (
 	SourceLocal   = "local"
 	SourceURL     = "url"
 	SourceLock    = "lock" // imported from ~/.agents/.skill-lock.json
+	// SourceMarketplace is a plugin resolved through a Claude marketplace
+	// (.claude-plugin/marketplace.json in a GitHub repository).
+	SourceMarketplace = "marketplace"
 )
 
 // VaultSource records where a vault entry was downloaded from. Ref is the
@@ -123,4 +126,6 @@ type VaultEntry struct {
 	UpdatedAt     time.Time   `json:"updatedAt"`
 	ConvertedFrom string      `json:"convertedFrom,omitempty"` // source shape, "" when none
 	Spec          SpecReport  `json:"spec"`
+	// AutoSync makes every scan fan the entry out to all enabled agents.
+	AutoSync bool `json:"autoSync"`
 }

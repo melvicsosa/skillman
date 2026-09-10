@@ -20,7 +20,7 @@ var _ domain.VaultRepository = (*VaultRepo)(nil)
 func NewVaultRepo(db *DB) *VaultRepo { return &VaultRepo{db: db} }
 
 const vaultColumns = `name, path, content_hash, source_type, source_ref, source_url, source_subpath,
-	source_commit, source_hash, converted_from, spec_valid, spec_issues, installed_at, updated_at`
+	source_commit, source_hash, converted_from, spec_valid, spec_issues, installed_at, updated_at, auto_sync`
 
 // ListVault returns every entry ordered by name.
 func (r *VaultRepo) ListVault(ctx context.Context) ([]domain.VaultEntry, error) {
@@ -66,7 +66,7 @@ func (r *VaultRepo) UpsertVault(ctx context.Context, e domain.VaultEntry) error 
 	}
 	_, err = r.db.ExecContext(ctx, `
 		INSERT INTO vault (`+vaultColumns+`)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(name) DO UPDATE SET
 			path = excluded.path,
 			content_hash = excluded.content_hash,
@@ -80,10 +80,11 @@ func (r *VaultRepo) UpsertVault(ctx context.Context, e domain.VaultEntry) error 
 			spec_valid = excluded.spec_valid,
 			spec_issues = excluded.spec_issues,
 			installed_at = excluded.installed_at,
-			updated_at = excluded.updated_at`,
+			updated_at = excluded.updated_at,
+			auto_sync = excluded.auto_sync`,
 		e.Name, e.Path, e.ContentHash, e.Source.Type, e.Source.Ref, e.Source.URL, e.Source.Subpath,
 		e.Source.Commit, e.SourceHash, e.ConvertedFrom, e.Spec.Valid, string(issues),
-		installed.UTC().Format(time.RFC3339), updated.UTC().Format(time.RFC3339))
+		installed.UTC().Format(time.RFC3339), updated.UTC().Format(time.RFC3339), e.AutoSync)
 	if err != nil {
 		return fmt.Errorf("upsert vault %s: %w", e.Name, err)
 	}
@@ -106,7 +107,7 @@ func scanVault(row scanner) (domain.VaultEntry, error) {
 	)
 	if err := row.Scan(&e.Name, &e.Path, &e.ContentHash, &e.Source.Type, &e.Source.Ref, &e.Source.URL,
 		&e.Source.Subpath, &e.Source.Commit, &e.SourceHash, &e.ConvertedFrom, &e.Spec.Valid, &issues,
-		&installed, &updated); err != nil {
+		&installed, &updated, &e.AutoSync); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return e, err
 		}

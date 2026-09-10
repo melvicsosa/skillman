@@ -298,6 +298,18 @@ tray in the darwin archives and the brew formula.
 
 **Phase 4, sync.** Fan-out from vault to all enabled agents, drift repair
 ("update codex copy from vault"), marketplace sources, Claude plugin export.
+Status (2026-09-10): done. `sync` (per entry, `--all`, `--project`,
+`--dry-run`; linked/already/conflict per agent, foreign dirs never
+overwritten), per-entry `autoSync` (sidecar + migration 0004, `vault
+sync-mode`, fan-out inside `scan`), `doctor --fix-drift --from <agent|vault>`
+and `vault adopt --from <agent> [--link]` with drift copies + `repairable`
+in the doctor report, `marketplace:` registry (real marketplace.json shape:
+`plugins[].source` is a relative path or `{source: url|git-subdir|github,
+url|repo, path, ref, sha}`; `marketplaces` setting), `export plugin`
+(`.claude-plugin/plugin.json` {name, version, description} + `skills/` +
+README), `/api/sync`, `/api/vault/{name}/sync`, `PATCH /api/vault/{name}`,
+`/api/doctor/drift/{name}/repair`, `/api/vault/adopt`, `/api/vault/export`,
+and SPA deep links (`/agent/<id>`, `/vault`, `/discover`, `/settings`).
 
 ---
 

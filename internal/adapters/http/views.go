@@ -134,6 +134,7 @@ type VaultView struct {
 	UpdatedAt     string             `json:"updatedAt"`
 	ConvertedFrom string             `json:"convertedFrom,omitempty"`
 	Spec          domain.SpecReport  `json:"spec"`
+	AutoSync      bool               `json:"autoSync"`
 	Links         []SkillView        `json:"links"`
 }
 
@@ -151,6 +152,6 @@ func ToVaultView(v app.VaultStatus) VaultView {
 	return VaultView{
 		Name: v.Name, Path: v.Path, ContentHash: v.ContentHash, Source: v.Source, SourceHash: v.SourceHash,
 		InstalledAt: v.InstalledAt.UTC().Format(time.RFC3339), UpdatedAt: v.UpdatedAt.UTC().Format(time.RFC3339),
-		ConvertedFrom: v.ConvertedFrom, Spec: v.Spec, Links: ToSkillViews(v.Links),
+		ConvertedFrom: v.ConvertedFrom, Spec: v.Spec, AutoSync: v.AutoSync, Links: ToSkillViews(v.Links),
 	}
 }

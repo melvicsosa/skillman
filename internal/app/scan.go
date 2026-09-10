@@ -26,6 +26,8 @@ type ScanSummary struct {
 	Removed  int      `json:"removed"`
 	Disabled int      `json:"disabled"`
 	Errors   []string `json:"errors"`
+	// Sync is the auto-sync fan-out result, nil when no entry has it on.
+	Sync *SyncReport `json:"sync,omitempty"`
 }
 
 // originSidecarSuffix names the file written next to each quarantined
@@ -70,6 +72,9 @@ func (s *Service) Scan(ctx context.Context, opts ScanOptions) (ScanSummary, erro
 	entries, err := s.rebuildVault(ctx, &sum)
 	if err != nil {
 		return sum, err
+	}
+	if opts.ProjectRoot == nil {
+		s.autoSync(ctx, entries, &sum)
 	}
 	idx := newVaultIndex(s.VaultRoot(), entries)
 	for _, t := range targets {

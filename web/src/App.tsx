@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { api } from './api/client'
 import { ToastArea } from './components/molecules/Toast'
-import { ALL_AGENTS, Sidebar, VIEW_DISCOVER, VIEW_SETTINGS, VIEW_VAULT } from './components/organisms/Sidebar'
+import { Sidebar, VIEW_DISCOVER, VIEW_SETTINGS, VIEW_VAULT } from './components/organisms/Sidebar'
 import { useApi } from './hooks/useApi'
+import { useRoute } from './hooks/useRoute'
 import { errMsg, useToast } from './hooks/useToast'
 import { DiscoverPage } from './pages/DiscoverPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -28,7 +29,7 @@ function App() {
   const vault = useApi(fetchVault)
   const { toasts, toast } = useToast()
 
-  const [selected, setSelected] = useState<string>(ALL_AGENTS)
+  const [selected, setSelected] = useRoute()
   const [busyAgent, setBusyAgent] = useState<string | null>(null)
 
   const agentList = useMemo(() => agents.data ?? [], [agents.data])

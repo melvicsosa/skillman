@@ -79,11 +79,12 @@ export function DiscoverPage({ agents, projects, vaultNames, toast, onChanged }:
   return (
     <>
       <header className="topbar">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search skills.sh and GitHub" />
+        <SearchInput value={query} onChange={setQuery} placeholder="Search skills.sh, GitHub and marketplaces" />
         <select className="select" aria-label="Source" value={source} onChange={(e) => setSource(e.target.value as RegistrySource)}>
           <option value="">All sources</option>
           <option value="skillssh">skills.sh</option>
           <option value="github">GitHub</option>
+          <option value="marketplace">Marketplace</option>
         </select>
         <div className="tabs" role="tablist" aria-label="Discover">
           {tabs.map((t) => (
@@ -127,7 +128,7 @@ export function DiscoverPage({ agents, projects, vaultNames, toast, onChanged }:
               vaultNames={vaultNames}
               onInstall={install}
               emptyTitle={debounced ? (searching ? 'Searching…' : `Nothing matches "${debounced}"`) : 'Search for a skill'}
-              emptyHint={debounced ? undefined : 'Type a name or topic; results come from skills.sh and GitHub.'}
+              emptyHint={debounced ? undefined : 'Type a name or topic; results come from skills.sh, GitHub and your configured marketplaces.'}
             />
           </>
         )}

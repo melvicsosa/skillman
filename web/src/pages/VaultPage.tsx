@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 
-import { api, type Agent, type Project, type VaultEntry } from '../api/client'
+import { api, type Agent, type ExportRequest, type Project, type SyncReport, type VaultEntry } from '../api/client'
 import { Alert } from '../components/atoms/Alert'
 import { Button } from '../components/atoms/Button'
 import { SearchInput } from '../components/atoms/SearchInput'
 import { Spinner } from '../components/atoms/Spinner'
+import { ExportBar } from '../components/organisms/ExportBar'
 import { InstallDialog, type InstallTarget } from '../components/organisms/InstallDialog'
 import { VaultTable } from '../components/organisms/VaultTable'
 import type { ApiState } from '../hooks/useApi'
@@ -24,6 +25,9 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
   const [project, setProject] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [ref, setRef] = useState('')
   const [target, setTarget] = useState<InstallTarget | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -86,6 +90,85 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
       toast(`Removed ${res.name}`, res.unlinked.length ? `Unlinked ${res.unlinked.length} install${res.unlinked.length === 1 ? '' : 's'}` : undefined)
     })
 
+  const toastSync = (title: string, res: SyncReport) => {
+    const conflicts = res.entries.flatMap((e) =>
+      e.links.filter((l) => l.status === 'conflict').map((l) => `${e.name} → ${l.agent} ${l.path}${l.message ? `: ${l.message}` : ''}`),
+    )
+    toast(
+      title,
+      [`${res.linked} linked, ${res.already} already linked, ${res.conflicts} conflicts${res.dryRun ? ' (dry run)' : ''}`, ...conflicts].join('\n'),
+      res.conflicts ? 'error' : 'ok',
+    )
+  }
+
+  const onSyncAll = async () => {
+    setSyncing(true)
+    setError(null)
+    try {
+      toastSync('Sync complete', await api.sync())
+      await onChanged()
+    } catch (err) {
+      setError(`Sync: ${errMsg(err)}`)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const onSync = (entry: VaultEntry) =>
+    run(entry.name, async () => {
+      try {
+        toastSync(`Synced ${entry.name}`, await api.syncVault(entry.name, { project: project ?? undefined }))
+      } catch (err) {
+        setError(`Sync ${entry.name}: ${errMsg(err)}`)
+      }
+    })
+
+  const onAutoSync = (entry: VaultEntry, autoSync: boolean) =>
+    run(`${entry.name}/auto-sync`, async () => {
+      try {
+        await api.setVaultAutoSync(entry.name, autoSync)
+      } catch (err) {
+        setError(`Auto-sync ${entry.name}: ${errMsg(err)}`)
+      }
+    })
+
+  const onSelect = (entry: VaultEntry, on: boolean) =>
+    setSelected((s) => {
+      const next = new Set(s)
+      if (on) next.add(entry.name)
+      else next.delete(entry.name)
+      return next
+    })
+
+  const onSelectAll = (on: boolean) =>
+    setSelected((s) => {
+      const next = new Set(s)
+      for (const e of entries) {
+        if (on) next.add(e.name)
+        else next.delete(e.name)
+      }
+      return next
+    })
+
+  const selectedNames = useMemo(
+    () => (vault.data ?? []).map((e) => e.name).filter((n) => selected.has(n)),
+    [vault.data, selected],
+  )
+
+  const onExport = async (req: ExportRequest) => {
+    setExporting(true)
+    setError(null)
+    try {
+      const res = await api.exportPlugin(req)
+      toast(`Exported ${res.skills.length} ${res.skills.length === 1 ? 'skill' : 'skills'} to ${res.dir}`, res.manifest)
+      setSelected(new Set())
+    } catch (err) {
+      setError(`Export: ${errMsg(err)}`)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const onImportLock = async () => {
     setImporting(true)
     setError(null)
@@ -146,6 +229,10 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
           {importing ? <Spinner /> : null}
           Import lock file
         </Button>
+        <Button onClick={onSyncAll} disabled={syncing} aria-busy={syncing} title="Link every vault entry into every enabled agent">
+          {syncing ? <Spinner /> : null}
+          Sync all
+        </Button>
       </header>
       <div className="content">
         {error && <Alert onDismiss={() => setError(null)}>{error}</Alert>}
@@ -172,13 +259,21 @@ export function VaultPage({ vault, agents, projects, toast, onChanged }: Props) 
               </span>
               <span>{columns.length === 0 ? 'No enabled agents' : `${columns.length} enabled agents`}</span>
             </p>
+            {selectedNames.length > 0 && (
+              <ExportBar selected={selectedNames} busy={exporting} onExport={onExport} onClear={() => setSelected(new Set())} />
+            )}
             <VaultTable
               entries={entries}
               agents={columns}
               project={project}
               busy={busy}
+              selected={selected}
+              onSelect={onSelect}
+              onSelectAll={onSelectAll}
               onToggle={onToggle}
               onUpdate={onUpdate}
+              onSync={onSync}
+              onAutoSync={onAutoSync}
               onRemove={onRemove}
             />
           </>

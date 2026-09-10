@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { api, type Agent, type DoctorReport, type Project, type Skill, type VaultEntry } from '../api/client'
+import { api, type Agent, type DoctorReport, type Issue, type Project, type Skill, type VaultEntry } from '../api/client'
 import type { ApiState } from '../hooks/useApi'
 import { errMsg, type ToastFn } from '../hooks/useToast'
 import type { ScopeTab } from '../components/molecules/ScopeTabs'
@@ -114,6 +114,33 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
     }
   }
 
+  const onRepair = async (issue: Issue, from: string) => {
+    const name = issue.name ?? ''
+    const project = issue.scope?.startsWith('project:') ? issue.scope.slice('project:'.length) : undefined
+    try {
+      const res = await api.repairDrift(name, { from, project })
+      const lines = [
+        `${res.replaced.length} ${res.replaced.length === 1 ? 'copy' : 'copies'} replaced from ${res.from} (${res.sourceHash.slice(0, 8)})`,
+        ...res.skipped.map((s) => `skipped ${s.agent} ${s.path}: ${s.reason}`),
+      ]
+      toast(`Repaired ${res.name}`, lines.join('\n'), res.skipped.length ? 'error' : 'ok')
+      await refreshAll()
+    } catch (err) {
+      toast(`Could not repair ${name}`, errMsg(err), 'error')
+    }
+  }
+
+  const onAdopt = async (issue: Issue, from: string) => {
+    const name = issue.name ?? ''
+    try {
+      const entry = await api.adoptVault({ name, from })
+      toast(`Adopted ${entry.name} into the vault`, `From ${from} · ${entry.path}`)
+      await refreshAll()
+    } catch (err) {
+      toast(`Could not adopt ${name}`, errMsg(err), 'error')
+    }
+  }
+
   const loadError = agents.error ?? skills.error
   const initialLoading = (agents.loading && !agents.data) || (skills.loading && !skills.data)
 
@@ -167,7 +194,13 @@ export function SkillsPage({ agents, skills, projects, doctor, vault, selectedAg
               emptyTitle={emptyTitle(allSkills.length, scope, projects.data?.length ?? 0, query)}
               emptyHint={emptyHint(allSkills.length, scope, projects.data?.length ?? 0, query)}
             />
-            <DoctorPanel report={doctor.data} error={doctor.error} loading={doctor.loading} />
+            <DoctorPanel
+              report={doctor.data}
+              error={doctor.error}
+              loading={doctor.loading}
+              onRepair={onRepair}
+              onAdopt={onAdopt}
+            />
           </>
         )}
       </div>

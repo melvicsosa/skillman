@@ -12,6 +12,7 @@ import (
 	skillfs "github.com/melvicsosa/skillman/internal/adapters/fs"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/github"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/local"
+	"github.com/melvicsosa/skillman/internal/adapters/registry/marketplace"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/skillssh"
 	"github.com/melvicsosa/skillman/internal/adapters/registry/urlsrc"
 	"github.com/melvicsosa/skillman/internal/adapters/service"
@@ -47,6 +48,7 @@ func newRuntime(ctx context.Context) (*env, error) {
 	gh := github.New(tokenFor(ctx, settings, app.SettingGitHubToken, envGitHubToken))
 	registries := []domain.Registry{
 		skillssh.New(tokenFor(ctx, settings, app.SettingSkillsSHToken, envSkillsSHToken), gh),
+		marketplace.New(gh, func(ctx context.Context) []string { return app.MarketplacesFrom(ctx, settings) }),
 		urlsrc.New(),
 		local.Source{Home: agents.Home},
 		gh,

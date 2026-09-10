@@ -35,6 +35,12 @@ type Issue struct {
 	Details []string `json:"details,omitempty"`
 	// SkillIDs lists every skill involved in a multi-skill issue (drift).
 	SkillIDs []string `json:"skillIds,omitempty"`
+	// Copies, Repairable and VaultRef are set on drift issues: every copy
+	// with its hash, whether at least one can be overwritten, and the vault
+	// entry of the same name when one exists (a valid repair source).
+	Copies     []DriftCopy `json:"copies,omitempty"`
+	Repairable bool        `json:"repairable,omitempty"`
+	VaultRef   string      `json:"vaultRef,omitempty"`
 }
 
 // DoctorReport groups issues by kind.
@@ -50,6 +56,7 @@ type inspected struct {
 	name  string
 	path  string
 	hash  string
+	copy  DriftCopy
 }
 
 // Doctor re-reads the filesystem for every enabled agent and registered
@@ -66,7 +73,15 @@ func (s *Service) Doctor(ctx context.Context) (DoctorReport, error) {
 	if err != nil {
 		return report, err
 	}
-	vaultIdx := newVaultIndex(s.VaultRoot(), nil)
+	entries, err := s.vault.ListVault(ctx)
+	if err != nil {
+		return report, err
+	}
+	vaultIdx := newVaultIndex(s.VaultRoot(), entries)
+	vaultNames := map[string]bool{}
+	for _, e := range entries {
+		vaultNames[e.Name] = true
+	}
 	var all []inspected
 	for _, t := range targets {
 		found, err := s.agents.Discover(t.agent, t.scope, t.root)
@@ -100,10 +115,11 @@ func (s *Service) Doctor(ctx context.Context) (DoctorReport, error) {
 				base.Details = info.SpecIssues
 				report.Issues = append(report.Issues, base)
 			}
-			all = append(all, inspected{agent: t.agent.ID, scope: t.scope, id: id, name: d.Name, path: d.Path, hash: info.ContentHash})
+			all = append(all, inspected{agent: t.agent.ID, scope: t.scope, id: id, name: d.Name, path: d.Path, hash: info.ContentHash,
+				copy: driftCopy(t.agent.ID, t.scope, d, info.ContentHash, vaultIdx)})
 		}
 	}
-	report.Issues = append(report.Issues, driftIssues(all)...)
+	report.Issues = append(report.Issues, driftIssues(all, vaultNames)...)
 
 	disabled, err := s.skills.List(ctx, domain.SkillFilter{State: domain.SkillDisabled})
 	if err != nil {
@@ -153,7 +169,7 @@ func (s *Service) vaultIssues(ctx context.Context, report *DoctorReport) error {
 
 // driftIssues groups skills by (scope, name) and reports groups whose
 // copies do not share one content hash.
-func driftIssues(all []inspected) []Issue {
+func driftIssues(all []inspected, vaultNames map[string]bool) []Issue {
 	type key struct {
 		scope domain.Scope
 		name  string
@@ -188,6 +204,11 @@ func driftIssues(all []inspected) []Issue {
 		for _, m := range members {
 			issue.Details = append(issue.Details, fmt.Sprintf("%s %s %s", m.agent, shortHash(m.hash), m.path))
 			issue.SkillIDs = append(issue.SkillIDs, m.id)
+			issue.Copies = append(issue.Copies, m.copy)
+			issue.Repairable = issue.Repairable || m.copy.Repairable
+		}
+		if vaultNames[k.name] {
+			issue.VaultRef = k.name
 		}
 		out = append(out, issue)
 	}

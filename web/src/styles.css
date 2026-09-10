@@ -1205,3 +1205,123 @@ button {
   min-width: 0;
   width: 100%;
 }
+
+/* Phase 4: selection/export bar, drift repair, registry descriptions ---- */
+
+.skill-desc {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 12px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table .col-select {
+  width: 4ch;
+}
+
+.row.is-selected td {
+  background: var(--accent-soft);
+}
+
+.selection-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.selection-bar-head {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.selection-bar-head strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.selection-bar-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: flex-end;
+}
+
+.selection-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.selection-field .input {
+  min-width: 220px;
+}
+
+.selection-field .input.is-short {
+  min-width: 120px;
+  width: 140px;
+}
+
+.selection-bar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.issue-copies {
+  margin: 6px 0 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.issue-copy {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  border: 0;
+  padding: 2px 0;
+}
+
+.issue-copy-hash {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.issue-copy-path {
+  color: var(--ink-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60ch;
+}
+
+.drift-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+
+.drift-action {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.drift-action .select {
+  min-width: 120px;
+}

@@ -20,6 +20,8 @@ var (
 	vaultInstallCommand bool
 	vaultUninstAgent    string
 	vaultUninstProj     string
+	vaultAdoptFrom      string
+	vaultAdoptLink      bool
 )
 
 var vaultCmd = &cobra.Command{
@@ -48,13 +50,17 @@ var vaultListCmd = &cobra.Command{
 			return nil
 		}
 		tw := tabwriter.NewWriter(cmd.OutOrStdout(), 2, 4, 2, ' ', 0)
-		fmt.Fprintln(tw, "NAME\tSOURCE\tREF\tINSTALLED IN\tSPEC\tCONVERTED")
+		fmt.Fprintln(tw, "NAME\tSOURCE\tREF\tINSTALLED IN\tSPEC\tCONVERTED\tAUTO-SYNC")
 		for _, e := range list {
 			spec := "ok"
 			if !e.Spec.Valid {
 				spec = fmt.Sprintf("%d issues", len(e.Spec.Issues))
 			}
-			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", e.Name, e.Source.Type, truncate(e.Source.Ref, 50), linkSummary(e.Links), spec, e.ConvertedFrom)
+			auto := ""
+			if e.AutoSync {
+				auto = "on"
+			}
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", e.Name, e.Source.Type, truncate(e.Source.Ref, 50), linkSummary(e.Links), spec, e.ConvertedFrom, auto)
 		}
 		return tw.Flush()
 	},
@@ -198,7 +204,61 @@ var vaultUninstallCmd = &cobra.Command{
 	},
 }
 
+var vaultSyncModeCmd = &cobra.Command{
+	Use:   "sync-mode <name> on|off",
+	Short: "Turn auto-sync on or off for a vault entry (fan-out on every scan)",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var on bool
+		switch args[1] {
+		case "on":
+			on = true
+		case "off":
+		default:
+			return fmt.Errorf("mode must be on or off, got %q", args[1])
+		}
+		rt, err := newRuntime(cmd.Context())
+		if err != nil {
+			return err
+		}
+		defer rt.Close()
+		entry, err := rt.svc.VaultSetAutoSync(cmd.Context(), args[0], on)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "%s: auto-sync %s\n", entry.Name, args[1])
+		return nil
+	},
+}
+
+var vaultAdoptCmd = &cobra.Command{
+	Use:   "adopt <name> --from <agent> [--link]",
+	Short: "Copy an agent's skill into the vault so it can be synced elsewhere",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if vaultAdoptFrom == "" {
+			return fmt.Errorf("--from is required")
+		}
+		rt, err := newRuntime(cmd.Context())
+		if err != nil {
+			return err
+		}
+		defer rt.Close()
+		entry, err := rt.svc.VaultAdopt(cmd.Context(), args[0], domain.AgentID(vaultAdoptFrom), vaultAdoptLink)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Adopted %s from %s into the vault: %s\n", entry.Name, vaultAdoptFrom, entry.Path)
+		if vaultAdoptLink {
+			fmt.Fprintf(cmd.OutOrStdout(), "  %s now links into the vault\n", entry.Source.Ref)
+		}
+		return nil
+	},
+}
+
 func init() {
+	vaultAdoptCmd.Flags().StringVar(&vaultAdoptFrom, "from", "", "agent id holding the skill (required)")
+	vaultAdoptCmd.Flags().BoolVar(&vaultAdoptLink, "link", false, "replace the agent's directory with a symlink into the vault")
 	vaultListCmd.Flags().BoolVar(&vaultListJSON, "json", false, "print as JSON")
 	vaultRemoveCmd.Flags().BoolVar(&vaultRemoveForce, "force", false, "unlink from every agent first")
 	vaultInstallCmd.Flags().StringArrayVar(&vaultInstallTo, "to", nil, "agent id to install into (repeatable)")
@@ -208,5 +268,5 @@ func init() {
 	vaultInstallCmd.Flags().BoolVar(&vaultInstallCommand, "command", false, "also write a .claude/commands/<name>.md stub")
 	vaultUninstallCmd.Flags().StringVar(&vaultUninstAgent, "agent", "", "agent id (required)")
 	vaultUninstallCmd.Flags().StringVar(&vaultUninstProj, "project", "", "project root for a project install")
-	vaultCmd.AddCommand(vaultListCmd, vaultRemoveCmd, vaultUpdateCmd, vaultInstallCmd, vaultUninstallCmd)
+	vaultCmd.AddCommand(vaultListCmd, vaultRemoveCmd, vaultUpdateCmd, vaultInstallCmd, vaultUninstallCmd, vaultSyncModeCmd, vaultAdoptCmd)
 }

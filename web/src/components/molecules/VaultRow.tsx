@@ -5,6 +5,7 @@ import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
 import { Checkbox } from '../atoms/Checkbox'
 import { Spinner } from '../atoms/Spinner'
+import { Toggle } from '../atoms/Toggle'
 import { InlineConfirm } from './InlineConfirm'
 
 type Props = {
@@ -14,16 +15,21 @@ type Props = {
   project: string | null
   /** "name/agent" of the cell currently being changed, or name for row actions. */
   busy: string | null
+  selected: boolean
+  onSelect: (entry: VaultEntry, selected: boolean) => void
   onToggle: (entry: VaultEntry, agent: Agent, installed: boolean) => Promise<void>
   onUpdate: (entry: VaultEntry) => Promise<void>
+  onSync: (entry: VaultEntry) => Promise<void>
+  onAutoSync: (entry: VaultEntry, autoSync: boolean) => Promise<void>
   onRemove: (entry: VaultEntry, force: boolean) => Promise<void>
 }
 
 type RemoveState = { step: 'idle' } | { step: 'confirm' } | { step: 'linked'; message: string }
 
-export function VaultRow({ entry, agents, project, busy, onToggle, onUpdate, onRemove }: Props) {
+export function VaultRow({ entry, agents, project, busy, selected, onSelect, onToggle, onUpdate, onSync, onAutoSync, onRemove }: Props) {
   const [remove, setRemove] = useState<RemoveState>({ step: 'idle' })
   const rowBusy = busy === entry.name
+  const autoSyncBusy = busy === `${entry.name}/auto-sync`
   const issues = entry.spec.issues ?? []
 
   const installedIn = (agent: Agent) =>
@@ -44,7 +50,10 @@ export function VaultRow({ entry, agents, project, busy, onToggle, onUpdate, onR
   }
 
   return (
-    <tr className="row">
+    <tr className={`row${selected ? ' is-selected' : ''}`}>
+      <td className="cell-check">
+        <Checkbox checked={selected} label={`Select ${entry.name}`} onChange={(next) => onSelect(entry, next)} />
+      </td>
       <td className="cell-name">
         <span className="skill-name">{entry.name}</span>
         <span className="skill-path" title={entry.path}>
@@ -94,6 +103,15 @@ export function VaultRow({ entry, agents, project, busy, onToggle, onUpdate, onR
           </td>
         )
       })}
+      <td className="cell-check">
+        <Toggle
+          on={entry.autoSync}
+          busy={autoSyncBusy}
+          disabled={rowBusy}
+          label={`Auto-sync ${entry.name}: ${entry.autoSync ? 'on' : 'off'}`}
+          onChange={(next) => void onAutoSync(entry, next)}
+        />
+      </td>
       <td className="cell-num" title={entry.updatedAt}>
         {shortDate(entry.updatedAt)}
       </td>
@@ -103,6 +121,9 @@ export function VaultRow({ entry, agents, project, busy, onToggle, onUpdate, onR
             <Button variant="ghost" onClick={() => void onUpdate(entry)} disabled={rowBusy} aria-busy={rowBusy}>
               {rowBusy ? <Spinner /> : null}
               Update
+            </Button>
+            <Button variant="ghost" onClick={() => void onSync(entry)} disabled={rowBusy} title="Link this entry into every enabled agent">
+              Sync
             </Button>
             <Button variant="ghost" onClick={() => setRemove({ step: 'confirm' })} disabled={rowBusy}>
               Remove

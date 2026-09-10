@@ -34,7 +34,7 @@ func (s *Service) ResolveRef(ref string) (domain.Registry, error) {
 			return reg, nil
 		}
 	}
-	return nil, fmt.Errorf("cannot tell what %q refers to: use owner/repo[/path], a github.com URL, skillssh:<owner>/<repo>/<skill>, a local path or a .zip/.tar.gz/SKILL.md URL", ref)
+	return nil, fmt.Errorf("cannot tell what %q refers to: use owner/repo[/path], a github.com URL, skillssh:<owner>/<repo>/<skill>, marketplace:<owner>/<repo>/<plugin>, a local path or a .zip/.tar.gz/SKILL.md URL", ref)
 }
 
 func (s *Service) registry(id string) domain.Registry {
@@ -65,7 +65,7 @@ func (s *Service) Search(ctx context.Context, q, source string) (SearchResult, e
 	if source != "" {
 		reg := s.registry(source)
 		if reg == nil {
-			return res, fmt.Errorf("unknown registry %q (want skillssh or github)", source)
+			return res, fmt.Errorf("unknown registry %q (want skillssh, github or marketplace)", source)
 		}
 		regs = []domain.Registry{reg}
 	} else {

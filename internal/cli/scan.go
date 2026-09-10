@@ -46,6 +46,16 @@ func init() {
 func printScanSummary(cmd *cobra.Command, sum app.ScanSummary) {
 	out := cmd.OutOrStdout()
 	fmt.Fprintf(out, "Scanned: %d skills found, %d added, %d removed, %d disabled\n", sum.Found, sum.Added, sum.Removed, sum.Disabled)
+	if sum.Sync != nil {
+		fmt.Fprintf(out, "Auto-sync: %d entries, %d linked, %d already installed, %d conflicts\n", len(sum.Sync.Entries), sum.Sync.Linked, sum.Sync.Already, sum.Sync.Conflicts)
+		for _, e := range sum.Sync.Entries {
+			for _, l := range e.Links {
+				if l.Status == app.SyncConflict {
+					fmt.Fprintf(cmd.ErrOrStderr(), "warning: auto-sync %s: %s %s: %s\n", e.Name, l.Agent, l.Path, l.Message)
+				}
+			}
+		}
+	}
 	for _, e := range sum.Errors {
 		fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s\n", e)
 	}

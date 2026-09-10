@@ -19,14 +19,20 @@ export function SettingsForm({ settings, loading, error, saving, onSave }: Props
   const [port, setPort] = useState('')
   const [github, setGithub] = useState('')
   const [skillssh, setSkillssh] = useState('')
+  const [marketplaces, setMarketplaces] = useState('')
 
   useEffect(() => {
-    if (settings) setPort(String(settings.port))
+    if (settings) {
+      setPort(String(settings.port))
+      setMarketplaces((settings.marketplaces ?? []).join(', '))
+    }
   }, [settings])
 
   const portNum = Number(port)
   const portValid = Number.isInteger(portNum) && portNum >= 1024 && portNum <= 65535
-  const dirty = settings ? portNum !== settings.port || github !== '' || skillssh !== '' : false
+  const marketplaceList = splitList(marketplaces)
+  const marketplacesDirty = settings ? marketplaceList.join(',') !== (settings.marketplaces ?? []).join(',') : false
+  const dirty = settings ? portNum !== settings.port || github !== '' || skillssh !== '' || marketplacesDirty : false
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -35,6 +41,7 @@ export function SettingsForm({ settings, loading, error, saving, onSave }: Props
     if (portNum !== settings.port) patch.port = portNum
     if (github !== '') patch.githubToken = github.trim()
     if (skillssh !== '') patch.skillsshToken = skillssh.trim()
+    if (marketplacesDirty) patch.marketplaces = marketplaceList
     await onSave(patch)
     setGithub('')
     setSkillssh('')
@@ -111,6 +118,19 @@ export function SettingsForm({ settings, loading, error, saving, onSave }: Props
             )}
           </small>
         </label>
+        <label className="field">
+          <span>Marketplaces</span>
+          <input
+            className="input"
+            type="text"
+            autoComplete="off"
+            placeholder="anthropics/claude-plugins, owner/repo"
+            value={marketplaces}
+            onChange={(e) => setMarketplaces(e.target.value)}
+            disabled={!settings || saving}
+          />
+          <small className="field-hint">Comma-separated Claude plugin marketplaces (owner/repo) searched by Discover.</small>
+        </label>
       </div>
       <p className="card-hint">
         Environment variables <code>GITHUB_TOKEN</code> and <code>SKILLSSH_TOKEN</code> are used when the stored token is empty.
@@ -124,4 +144,11 @@ export function SettingsForm({ settings, loading, error, saving, onSave }: Props
       </div>
     </form>
   )
+}
+
+function splitList(value: string): string[] {
+  return value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }

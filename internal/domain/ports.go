@@ -80,13 +80,15 @@ type VaultRepository interface {
 
 // RegistryResult is one hit of a registry search or listing.
 type RegistryResult struct {
-	Registry   string `json:"registry"` // registry ID
-	ID         string `json:"id"`       // registry-specific stable id
-	Name       string `json:"name"`
-	Source     string `json:"source"` // "owner/repo" or provider
-	Installs   int    `json:"installs,omitempty"`
-	URL        string `json:"url,omitempty"`
-	InstallURL string `json:"installUrl,omitempty"`
+	Registry string `json:"registry"` // registry ID
+	ID       string `json:"id"`       // registry-specific stable id
+	Name     string `json:"name"`
+	Source   string `json:"source"` // "owner/repo" or provider
+	// Description is the registry's summary when it offers one.
+	Description string `json:"description,omitempty"`
+	Installs    int    `json:"installs,omitempty"`
+	URL         string `json:"url,omitempty"`
+	InstallURL  string `json:"installUrl,omitempty"`
 	// Ref is the reference to pass to `add` to install this result.
 	Ref string `json:"ref"`
 }
@@ -137,7 +139,10 @@ const (
 	ShapeClaudeCommand   SourceShape = "claude-command"
 	ShapeOpenCodeCommand SourceShape = "opencode-command"
 	ShapeClaudePlugin    SourceShape = "claude-plugin"
-	ShapeUnknown         SourceShape = "unknown"
+	// ShapeMarketplace is a repository holding .claude-plugin/marketplace.json;
+	// it is never converted, one of its plugins must be picked.
+	ShapeMarketplace SourceShape = "claude-marketplace"
+	ShapeUnknown     SourceShape = "unknown"
 )
 
 // ConvertedSkill is one spec skill produced by a conversion.

@@ -16,6 +16,11 @@ export function RegistryRow({ hit, inVault, onInstall }: Props) {
         <span className="skill-path mono" title={hit.ref}>
           {hit.ref}
         </span>
+        {hit.description && (
+          <span className="skill-desc" title={hit.description}>
+            {hit.description}
+          </span>
+        )}
       </td>
       <td className="cell-source">
         {hit.url ? (

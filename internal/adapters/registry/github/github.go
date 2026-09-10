@@ -187,6 +187,22 @@ func (c *Client) DefaultBranch(ctx context.Context, owner, repo string) (string,
 	return meta.DefaultBranch, nil
 }
 
+// RawFile returns the contents of path in owner/repo at ref ("" for the
+// default branch) through the contents API, which serves raw bytes when
+// asked for the raw media type.
+func (c *Client) RawFile(ctx context.Context, owner, repo, ref, filePath string) ([]byte, error) {
+	u := fmt.Sprintf("%s/repos/%s/%s/contents/%s", c.BaseURL, owner, repo, strings.TrimPrefix(filePath, "/"))
+	if ref != "" {
+		u += "?ref=" + url.QueryEscape(ref)
+	}
+	resp, err := c.do(ctx, http.MethodGet, u, "application/vnd.github.raw+json")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+}
+
 // Download fetches the tarball of r and extracts r.Subpath into a new temp
 // dir. It returns the dir, the commit sha recorded in the tarball's top
 // directory name, and the ref that was actually used.

@@ -58,8 +58,11 @@ func (Converter) Detect(src string) (domain.SourceShape, error) {
 		if fileExists(filepath.Join(src, skillfs.SkillFile)) {
 			return domain.ShapeSkill, nil
 		}
-		if fileExists(filepath.Join(src, ".claude-plugin", "plugin.json")) && dirExists(filepath.Join(src, "skills")) {
+		if fileExists(filepath.Join(src, ".claude-plugin", "plugin.json")) && (dirExists(filepath.Join(src, "skills")) || len(pluginSkillDirs(src)) > 0) {
 			return domain.ShapeClaudePlugin, nil
+		}
+		if fileExists(filepath.Join(src, ".claude-plugin", "marketplace.json")) {
+			return domain.ShapeMarketplace, nil
 		}
 		return domain.ShapeUnknown, nil
 	}
@@ -112,10 +115,36 @@ func (c Converter) Convert(src, dstRoot, name string) (domain.ConversionReport, 
 			return report, err
 		}
 		report.Skills = append(report.Skills, sk)
+	case domain.ShapeMarketplace:
+		return report, reject(domain.ShapeMarketplace, src, describeMarketplace(src))
 	default:
 		return report, reject(domain.ShapeUnknown, src, describeUnknown(src))
 	}
 	return report, nil
+}
+
+// describeMarketplace explains that a marketplace repository must be added
+// one plugin at a time and lists a few plugin names.
+func describeMarketplace(src string) string {
+	b, err := os.ReadFile(filepath.Join(src, ".claude-plugin", "marketplace.json"))
+	if err != nil {
+		return "a Claude marketplace, not a plugin: add one of its plugins with marketplace:<owner>/<repo>/<plugin>"
+	}
+	var m struct {
+		Plugins []struct {
+			Name string `json:"name"`
+		} `json:"plugins"`
+	}
+	_ = json.Unmarshal(b, &m)
+	names := make([]string, 0, 8)
+	for _, p := range m.Plugins {
+		if len(names) == 8 {
+			names = append(names, "...")
+			break
+		}
+		names = append(names, p.Name)
+	}
+	return fmt.Sprintf("a Claude marketplace listing %d plugins, not a plugin: add one with marketplace:<owner>/<repo>/<plugin> (%s)", len(m.Plugins), strings.Join(names, ", "))
 }
 
 // describeUnknown builds a rejection reason that points at skill dirs found
@@ -183,6 +212,17 @@ func unpackPlugin(src, dstRoot string) ([]domain.ConvertedSkill, error) {
 	if err != nil {
 		return nil, err
 	}
+	seen := map[string]bool{}
+	for _, d := range found {
+		seen[d.Path] = true
+	}
+	for _, dir := range pluginSkillDirs(src) {
+		if seen[dir] {
+			continue
+		}
+		seen[dir] = true
+		found = append(found, skillfs.Discovered{Name: filepath.Base(dir), Path: dir})
+	}
 	if len(found) == 0 {
 		return nil, reject(domain.ShapeClaudePlugin, src, "plugin has no skills/<name>/SKILL.md")
 	}
@@ -200,6 +240,30 @@ func unpackPlugin(src, dstRoot string) ([]domain.ConvertedSkill, error) {
 		out = append(out, sk)
 	}
 	return out, nil
+}
+
+// pluginSkillDirs returns the existing skill directories listed in the
+// plugin.json "skills" array (paths relative to the plugin root, used by
+// plugins that keep skills outside skills/).
+func pluginSkillDirs(src string) []string {
+	b, err := os.ReadFile(filepath.Join(src, ".claude-plugin", "plugin.json"))
+	if err != nil {
+		return nil
+	}
+	var meta struct {
+		Skills []string `json:"skills"`
+	}
+	if json.Unmarshal(b, &meta) != nil {
+		return nil
+	}
+	var out []string
+	for _, rel := range meta.Skills {
+		dir := filepath.Join(src, filepath.FromSlash(strings.TrimPrefix(rel, "./")))
+		if fileExists(filepath.Join(dir, skillfs.SkillFile)) {
+			out = append(out, dir)
+		}
+	}
+	return out
 }
 
 func readPluginName(p string) string {

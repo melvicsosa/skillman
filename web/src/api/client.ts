@@ -45,6 +45,45 @@ export type ScanSummary = {
   removed: number
   disabled: number
   errors: string[]
+  /** Present when auto-sync ran as part of the scan. */
+  sync?: SyncReport
+}
+
+/** One agent-dir outcome of a vault sync. */
+export type SyncLink = {
+  agent: string
+  scope: string
+  path: string
+  status: 'linked' | 'copied' | 'already' | 'conflict'
+  message?: string
+}
+
+/** POST /api/sync and POST /api/vault/{name}/sync. */
+export type SyncReport = {
+  dryRun: boolean
+  entries: { name: string; links: SyncLink[] }[]
+  linked: number
+  already: number
+  conflicts: number
+}
+
+export type SyncRequest = {
+  project?: string
+  dryRun?: boolean
+}
+
+/** One on-disk copy of a drifting skill (Issue.copies for kind 'drift'). */
+export type DriftCopy = {
+  skillId: string
+  agent: string
+  scope: string
+  path: string
+  hash: string
+  isSymlink: boolean
+  vaultRef?: string
+  readOnly: boolean
+  repairable: boolean
+  reason?: string
 }
 
 export type Issue = {
@@ -57,6 +96,35 @@ export type Issue = {
   message: string
   details?: string[]
   skillIds?: string[]
+  /** Drift only: every copy that was compared. */
+  copies?: DriftCopy[]
+  /** Drift only: at least one copy can be overwritten from a source. */
+  repairable?: boolean
+  /** Drift only: vault entry with the same name, a valid repair source. */
+  vaultRef?: string
+}
+
+/** POST /api/doctor/drift/{name}/repair. `from` is 'vault' or an agent id. */
+export type RepairRequest = {
+  from: string
+  to?: string[]
+  project?: string
+}
+
+export type RepairResult = {
+  name: string
+  from: string
+  sourcePath: string
+  sourceHash: string
+  replaced: string[]
+  skipped: { path: string; agent: string; reason: string }[]
+}
+
+/** POST /api/vault/adopt: copy an agent's skill into the vault. */
+export type AdoptRequest = {
+  name: string
+  from: string
+  link?: boolean
 }
 
 export type DoctorReport = {
@@ -88,7 +156,23 @@ export type VaultEntry = {
   updatedAt: string
   convertedFrom?: string
   spec: SpecReport
+  autoSync: boolean
   links: Skill[]
+}
+
+/** POST /api/vault/export: bundle vault skills as a Claude plugin. */
+export type ExportRequest = {
+  outDir: string
+  name: string
+  version?: string
+  description?: string
+  skills: string[]
+}
+
+export type ExportResult = {
+  dir: string
+  manifest: string
+  skills: string[]
 }
 
 export type LinkResult = {
@@ -128,6 +212,7 @@ export type RegistryResult = {
   url?: string
   installUrl?: string
   ref: string
+  description?: string
 }
 
 export type SearchResult = {
@@ -154,7 +239,7 @@ export type LockImportResult = {
   skipped: { name: string; reason: string }[] | null
 }
 
-export type RegistrySource = '' | 'skillssh' | 'github'
+export type RegistrySource = '' | 'skillssh' | 'github' | 'marketplace'
 
 /** GET/PATCH /api/settings. Tokens are write-only: only their presence comes back. */
 export type Settings = {
@@ -162,6 +247,8 @@ export type Settings = {
   hasGithubToken: boolean
   hasSkillsshToken: boolean
   dataDir: string
+  /** Claude plugin marketplaces ("owner/repo") searched by Discover. */
+  marketplaces: string[]
   /** Set by PATCH when the port changed while the service is running. */
   restartRequired?: boolean
 }
@@ -170,6 +257,7 @@ export type SettingsPatch = {
   port?: number
   githubToken?: string
   skillsshToken?: string
+  marketplaces?: string[]
 }
 
 /** GET /api/service: platform service state plus what the port answers. */
@@ -248,7 +336,14 @@ export const api = {
     request<ScanSummary>(project ? `/api/scan?project=${encodeURIComponent(project)}` : '/api/scan', {
       method: 'POST',
     }),
+  sync: (dryRun?: boolean) =>
+    request<SyncReport>('/api/sync', { method: 'POST', body: JSON.stringify({ dryRun: dryRun ?? false }) }),
   doctor: () => request<DoctorReport>('/api/doctor'),
+  repairDrift: (name: string, body: RepairRequest) =>
+    request<RepairResult>(`/api/doctor/drift/${encodeURIComponent(name)}/repair`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   health: () => request<{ version: string }>('/api/health'),
   vault: () => request<VaultEntry[]>('/api/vault'),
   removeVault: (name: string, force: boolean) =>
@@ -267,6 +362,17 @@ export const api = {
     }),
   updateVault: (name: string) =>
     request<VaultUpdateResult>(`/api/vault/${encodeURIComponent(name)}/update`, { method: 'POST' }),
+  syncVault: (name: string, body: SyncRequest) =>
+    request<SyncReport>(`/api/vault/${encodeURIComponent(name)}/sync`, { method: 'POST', body: JSON.stringify(body) }),
+  setVaultAutoSync: (name: string, autoSync: boolean) =>
+    request<VaultEntry>(`/api/vault/${encodeURIComponent(name)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ autoSync }),
+    }),
+  adoptVault: (body: AdoptRequest) =>
+    request<VaultEntry>('/api/vault/adopt', { method: 'POST', body: JSON.stringify(body) }),
+  exportPlugin: (body: ExportRequest) =>
+    request<ExportResult>('/api/vault/export', { method: 'POST', body: JSON.stringify(body) }),
   search: (q: string, source: RegistrySource, signal?: AbortSignal) => {
     const params = new URLSearchParams({ q })
     if (source) params.set('source', source)
