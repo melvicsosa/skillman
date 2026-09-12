@@ -403,7 +403,7 @@ func (s *Service) VaultUpdate(ctx context.Context, name string) (VaultUpdateResu
 func (s *Service) rescan(ctx context.Context, projects map[string]bool) error {
 	for root := range projects {
 		if _, err := s.projects.GetByRoot(ctx, root); errors.Is(err, domain.ErrNotFound) {
-			if _, _, err := s.RegisterProject(ctx, root); err != nil {
+			if _, _, err := s.RegisterProject(ctx, root, RegisterProjectOptions{}); err != nil {
 				return err
 			}
 		} else if err != nil {

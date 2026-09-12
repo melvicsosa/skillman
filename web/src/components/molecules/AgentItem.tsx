@@ -1,16 +1,14 @@
 import type { Agent } from '../../api/client'
-import { Toggle } from '../atoms/Toggle'
 
 type Props = {
   agent: Agent
   count: number
   selected: boolean
-  busy: boolean
   onSelect: () => void
-  onToggle: (enabled: boolean) => void
 }
 
-export function AgentItem({ agent, count, selected, busy, onSelect, onToggle }: Props) {
+/** Sidebar row for one agent. Navigation only; enable/disable lives in Settings. */
+export function AgentItem({ agent, count, selected, onSelect }: Props) {
   const cls = ['agent-item', selected ? 'is-selected' : '', agent.enabled ? '' : 'is-off'].join(' ').trim()
   return (
     <li
@@ -31,12 +29,7 @@ export function AgentItem({ agent, count, selected, busy, onSelect, onToggle }: 
         {agent.name}
       </span>
       <span className="agent-count">{count}</span>
-      <Toggle
-        on={agent.enabled}
-        busy={busy}
-        onChange={onToggle}
-        label={agent.enabled ? `Disable ${agent.name}` : `Enable ${agent.name}`}
-      />
+      <span style={{ width: 30 }} aria-hidden="true" />
     </li>
   )
 }

@@ -16,8 +16,9 @@ import (
 // ClaudeCodeID is the agent that only reads .claude/skills in projects.
 const ClaudeCodeID domain.AgentID = "claude-code"
 
-// sharedProjectDir is the cross-agent per-project skills dir (PLAN.md 1.2).
-const sharedProjectDir = ".agents/skills"
+// SharedProjectDir is the cross-agent per-project skills dir (PLAN.md 1.2).
+// It is also the dir created when a plain folder is registered as a project.
+const SharedProjectDir = ".agents/skills"
 
 // claudeProjectDir is where Claude Code reads per-project skills.
 const claudeProjectDir = ".claude/skills"
@@ -153,7 +154,7 @@ func (s *Service) linkPaths(agent domain.Agent, root, name string) (primary, sec
 	if root == "" {
 		return filepath.Join(agent.GlobalDirs[0], name), ""
 	}
-	primary = filepath.Join(root, filepath.FromSlash(sharedProjectDir), name)
+	primary = filepath.Join(root, filepath.FromSlash(SharedProjectDir), name)
 	if agent.ID == ClaudeCodeID {
 		secondary = filepath.Join(root, filepath.FromSlash(claudeProjectDir), name)
 	}

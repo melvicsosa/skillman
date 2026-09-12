@@ -359,14 +359,14 @@ func TestProjectsRegisterScanRemove(t *testing.T) {
 	if err := os.MkdirAll(empty, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.svc.RegisterProject(ctx, empty); err == nil {
+	if _, _, err := f.svc.RegisterProject(ctx, empty, RegisterProjectOptions{}); err == nil {
 		t.Fatal("registering a dir without .git or skills dirs should fail")
 	}
-	if _, _, err := f.svc.RegisterProject(ctx, f.path("missing")); err == nil {
+	if _, _, err := f.svc.RegisterProject(ctx, f.path("missing"), RegisterProjectOptions{}); err == nil {
 		t.Fatal("registering a missing dir should fail")
 	}
 
-	p, sum, err := f.svc.RegisterProject(ctx, root)
+	p, sum, err := f.svc.RegisterProject(ctx, root, RegisterProjectOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -377,7 +377,7 @@ func TestProjectsRegisterScanRemove(t *testing.T) {
 	if sum.Found != 8 {
 		t.Fatalf("project scan = %+v", sum)
 	}
-	if _, _, err := f.svc.RegisterProject(ctx, root); !errors.Is(err, domain.ErrExists) {
+	if _, _, err := f.svc.RegisterProject(ctx, root, RegisterProjectOptions{}); !errors.Is(err, domain.ErrExists) {
 		t.Fatalf("duplicate register err = %v", err)
 	}
 	sk, err := f.svc.ResolveSkill(ctx, "shared", "claude-code", root)

@@ -13,8 +13,8 @@ let pickerUnsupported = false
 
 type Props = {
   projects: Project[]
-  /** Registers a root; rejects with the API error message on failure. */
-  onAdd: (root: string) => Promise<void>
+  /** Registers a root; rejects with the API error on failure. */
+  onAdd: (root: string, opts?: { createSkillsDir?: boolean }) => Promise<void>
   onRemove: (project: Project) => Promise<void>
 }
 
@@ -24,6 +24,8 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
   const [root, setRoot] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** Root the server refused as "not a project"; offers to create the skills dir. */
+  const [notAProject, setNotAProject] = useState<{ root: string; dir: string } | null>(null)
   const [confirming, setConfirming] = useState<number | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
   const [picking, setPicking] = useState(false)
@@ -36,6 +38,7 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
     setOpen(false)
     setRoot('')
     setError(null)
+    setNotAProject(null)
     setConfirming(null)
     if (refocus) buttonRef.current?.focus()
   }
@@ -47,6 +50,7 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
       if (!wrapRef.current?.contains(e.target as Node)) {
         setOpen(false)
         setError(null)
+        setNotAProject(null)
         setConfirming(null)
       }
     }
@@ -54,16 +58,21 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
     return () => document.removeEventListener('pointerdown', onDown)
   }, [open])
 
-  const submit = async () => {
+  const submit = async (createSkillsDir = false) => {
     const r = root.trim()
     if (!r) return
     setAdding(true)
     setError(null)
+    setNotAProject(null)
     try {
-      await onAdd(r)
+      await onAdd(r, createSkillsDir ? { createSkillsDir } : undefined)
       close(true)
     } catch (err) {
-      setError(errMsg(err))
+      if (err instanceof ApiError && err.code === 'not_a_project') {
+        setNotAProject({ root: r, dir: err.suggestedDir ?? '.agents/skills' })
+      } else {
+        setError(errMsg(err))
+      }
     } finally {
       setAdding(false)
     }
@@ -171,6 +180,24 @@ export function ProjectManager({ projects, onAdd, onRemove }: Props) {
             </div>
           </form>
           {error && <Alert onDismiss={() => setError(null)}>{error}</Alert>}
+          {notAProject && (
+            <Alert
+              tone="warn"
+              actions={
+                <>
+                  <Button variant="primary" onClick={() => void submit(true)} disabled={adding} aria-busy={adding}>
+                    {adding ? <Spinner /> : null}
+                    Create {notAProject.dir} and add
+                  </Button>
+                  <Button variant="ghost" onClick={() => setNotAProject(null)} disabled={adding}>
+                    Cancel
+                  </Button>
+                </>
+              }
+            >
+              This folder has no .git or skills directory.
+            </Alert>
+          )}
           {projects.length > 0 && (
             <div className="popover-section">
               <div className="popover-label">Registered projects</div>

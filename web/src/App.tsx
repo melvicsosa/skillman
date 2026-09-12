@@ -2,11 +2,12 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { api } from './api/client'
 import { ToastArea } from './components/molecules/Toast'
-import { Sidebar, VIEW_DISCOVER, VIEW_SETTINGS, VIEW_VAULT } from './components/organisms/Sidebar'
+import { Sidebar, VIEW_DISCOVER, VIEW_DOCTOR, VIEW_SETTINGS, VIEW_VAULT } from './components/organisms/Sidebar'
 import { useApi } from './hooks/useApi'
 import { useRoute } from './hooks/useRoute'
 import { errMsg, useToast } from './hooks/useToast'
 import { DiscoverPage } from './pages/DiscoverPage'
+import { DoctorPage } from './pages/DoctorPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { SkillsPage } from './pages/SkillsPage'
 import { VaultPage } from './pages/VaultPage'
@@ -31,6 +32,7 @@ function App() {
 
   const [selected, setSelected] = useRoute()
   const [busyAgent, setBusyAgent] = useState<string | null>(null)
+  const [redetecting, setRedetecting] = useState(false)
 
   const agentList = useMemo(() => agents.data ?? [], [agents.data])
   const allSkills = useMemo(() => skills.data ?? [], [skills.data])
@@ -62,9 +64,34 @@ function App() {
     await Promise.all([agents.reload(), skills.reload(), projects.reload(), doctor.reload(), vault.reload()])
   }, [agents, skills, projects, doctor, vault])
 
+  /** A global scan re-probes every agent's dirs, so newly installed agents show up. */
+  const onRedetect = async () => {
+    setRedetecting(true)
+    try {
+      const sum = await api.scan()
+      const lines = [`${sum.found} skills found, ${sum.added} added, ${sum.removed} removed`]
+      if (sum.errors.length) lines.push(`${sum.errors.length} warning${sum.errors.length === 1 ? '' : 's'}: ${sum.errors[0]}`)
+      toast('Agents re-detected', lines.join('\n'), sum.errors.length ? 'error' : 'ok')
+      await refreshAll()
+    } catch (err) {
+      toast('Re-detect failed', errMsg(err), 'error')
+    } finally {
+      setRedetecting(false)
+    }
+  }
+
   const view =
     selected === VIEW_SETTINGS ? (
-      <SettingsPage toast={toast} />
+      <SettingsPage
+        toast={toast}
+        agents={agentList}
+        busyAgent={busyAgent}
+        redetecting={redetecting}
+        onToggleAgent={onToggleAgent}
+        onRedetect={() => void onRedetect()}
+      />
+    ) : selected === VIEW_DOCTOR ? (
+      <DoctorPage doctor={doctor} toast={toast} refreshAll={refreshAll} />
     ) : selected === VIEW_VAULT ? (
       <VaultPage
         vault={vault}
@@ -91,6 +118,7 @@ function App() {
         selectedAgent={selected}
         toast={toast}
         refreshAll={refreshAll}
+        onOpenDoctor={() => setSelected(VIEW_DOCTOR)}
       />
     )
 
@@ -101,11 +129,10 @@ function App() {
         counts={counts}
         totalCount={allSkills.length}
         vaultCount={vault.data?.length ?? 0}
+        doctorCount={doctor.data?.issues.length ?? 0}
         selected={selected}
-        busyAgent={busyAgent}
         version={health.data?.version ?? ''}
         onSelect={setSelected}
-        onToggle={onToggleAgent}
       />
       <main className="main">{view}</main>
       <ToastArea toasts={toasts} />

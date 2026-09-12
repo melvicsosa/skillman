@@ -186,13 +186,19 @@ func (s *Server) handleListProjects(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleAddProject(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Root string `json:"root"`
+		Root            string `json:"root"`
+		CreateSkillsDir bool   `json:"createSkillsDir"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Root) == "" {
-		writeErrorStatus(w, http.StatusBadRequest, `body must be {"root": "/absolute/path"}`)
+		writeErrorStatus(w, http.StatusBadRequest, `body must be {"root": "/absolute/path", "createSkillsDir": false}`)
 		return
 	}
-	p, sum, err := s.svc.RegisterProject(r.Context(), strings.TrimSpace(body.Root))
+	p, sum, err := s.svc.RegisterProject(r.Context(), strings.TrimSpace(body.Root), app.RegisterProjectOptions{CreateSkillsDir: body.CreateSkillsDir})
+	if errors.Is(err, domain.ErrNotAProject) {
+		// The client can retry with createSkillsDir once the user agrees.
+		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "code": "not_a_project", "suggestedDir": app.SharedProjectDir})
+		return
+	}
 	if err != nil {
 		writeError(w, err)
 		return
@@ -262,7 +268,7 @@ func writeError(w http.ResponseWriter, err error) {
 		status = http.StatusNotFound
 	case errors.Is(err, domain.ErrReadOnly), errors.Is(err, domain.ErrAmbiguous):
 		status = http.StatusConflict
-	case errors.Is(err, domain.ErrExists), errors.Is(err, domain.ErrLinked):
+	case errors.Is(err, domain.ErrExists), errors.Is(err, domain.ErrLinked), errors.Is(err, domain.ErrNotAProject):
 		status = http.StatusConflict
 	case errors.Is(err, domain.ErrRejected):
 		status = http.StatusUnprocessableEntity

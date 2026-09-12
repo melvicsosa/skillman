@@ -1,15 +1,21 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
 	httpadapter "github.com/melvicsosa/skillman/internal/adapters/http"
+	"github.com/melvicsosa/skillman/internal/app"
+	"github.com/melvicsosa/skillman/internal/domain"
 )
 
-var projectListJSON bool
+var (
+	projectListJSON       bool
+	projectAddCreateSkill bool
+)
 
 var projectCmd = &cobra.Command{
 	Use:   "project",
@@ -26,7 +32,10 @@ var projectAddCmd = &cobra.Command{
 			return err
 		}
 		defer rt.Close()
-		p, sum, err := rt.svc.RegisterProject(cmd.Context(), args[0])
+		p, sum, err := rt.svc.RegisterProject(cmd.Context(), args[0], app.RegisterProjectOptions{CreateSkillsDir: projectAddCreateSkill})
+		if errors.Is(err, domain.ErrNotAProject) {
+			return fmt.Errorf("%w\nre-run with --create-skills-dir to create %s", err, app.SharedProjectDir)
+		}
 		if err != nil {
 			return err
 		}
@@ -85,6 +94,7 @@ var projectRemoveCmd = &cobra.Command{
 }
 
 func init() {
+	projectAddCmd.Flags().BoolVar(&projectAddCreateSkill, "create-skills-dir", false, "create "+app.SharedProjectDir+" when the folder has no .git or skills dir")
 	projectListCmd.Flags().BoolVar(&projectListJSON, "json", false, "print as JSON")
 	projectCmd.AddCommand(projectAddCmd, projectListCmd, projectRemoveCmd)
 }

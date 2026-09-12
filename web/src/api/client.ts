@@ -286,9 +286,15 @@ export type UsageReport = {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** Machine-readable reason some endpoints add (e.g. 'not_a_project'). */
+  code?: string
+  /** Dir the server offers to create when code is 'not_a_project'. */
+  suggestedDir?: string
+  constructor(status: number, message: string, extra?: { code?: string; suggestedDir?: string }) {
     super(message)
     this.status = status
+    this.code = extra?.code
+    this.suggestedDir = extra?.suggestedDir
   }
 }
 
@@ -306,11 +312,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     body = null
   }
   if (!res.ok) {
-    const msg =
-      body && typeof body === 'object' && 'error' in body
-        ? String((body as { error: unknown }).error)
-        : `HTTP ${res.status}`
-    throw new ApiError(res.status, msg)
+    const obj = body && typeof body === 'object' ? (body as Record<string, unknown>) : null
+    const msg = obj && 'error' in obj ? String(obj.error) : `HTTP ${res.status}`
+    throw new ApiError(res.status, msg, {
+      code: typeof obj?.code === 'string' ? obj.code : undefined,
+      suggestedDir: typeof obj?.suggestedDir === 'string' ? obj.suggestedDir : undefined,
+    })
   }
   return body as T
 }
@@ -326,10 +333,10 @@ export const api = {
   enableSkill: (id: string) => request<Skill>(`/api/skills/${id}/enable`, { method: 'POST' }),
   disableSkill: (id: string) => request<Skill>(`/api/skills/${id}/disable`, { method: 'POST' }),
   projects: () => request<Project[]>('/api/projects'),
-  addProject: (root: string) =>
+  addProject: (root: string, opts?: { createSkillsDir?: boolean }) =>
     request<{ project: Project; scan: ScanSummary }>('/api/projects', {
       method: 'POST',
-      body: JSON.stringify({ root }),
+      body: JSON.stringify({ root, createSkillsDir: opts?.createSkillsDir ?? false }),
     }),
   /** Opens the native folder dialog on the server; null when canceled. */
   pickFolder: async (): Promise<string | null> => {

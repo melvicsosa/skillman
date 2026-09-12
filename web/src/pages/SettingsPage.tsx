@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
 
-import { api, type SettingsPatch } from '../api/client'
+import { api, type Agent, type SettingsPatch } from '../api/client'
 import { Alert } from '../components/atoms/Alert'
+import { AgentsCard } from '../components/organisms/AgentsCard'
 import { ServiceCard } from '../components/organisms/ServiceCard'
 import { SettingsForm } from '../components/organisms/SettingsForm'
 import { useApi } from '../hooks/useApi'
@@ -10,12 +11,17 @@ import { ThemeToggle } from '../components/molecules/ThemeToggle'
 
 type Props = {
   toast: ToastFn
+  agents: Agent[]
+  busyAgent: string | null
+  redetecting: boolean
+  onToggleAgent: (id: string, enabled: boolean) => void
+  onRedetect: () => void
 }
 
 const fetchSettings = () => api.settings()
 const fetchService = () => api.service()
 
-export function SettingsPage({ toast }: Props) {
+export function SettingsPage({ toast, agents, busyAgent, redetecting, onToggleAgent, onRedetect }: Props) {
   const settings = useApi(fetchSettings)
   const service = useApi(fetchService)
   const [saving, setSaving] = useState(false)
@@ -97,6 +103,7 @@ export function SettingsPage({ toast }: Props) {
             {notice}
           </Alert>
         )}
+        <AgentsCard agents={agents} busyAgent={busyAgent} redetecting={redetecting} onToggle={onToggleAgent} onRedetect={onRedetect} />
         <SettingsForm settings={settings.data} loading={settings.loading} error={settings.error} saving={saving} onSave={onSave} />
         <ServiceCard
           info={service.data}

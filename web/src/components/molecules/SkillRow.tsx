@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import type { Skill } from '../../api/client'
 import { Badge } from '../atoms/Badge'
 import { Toggle } from '../atoms/Toggle'
@@ -16,13 +17,17 @@ type Props = {
   showUsage: boolean
   flags: RowFlags
   busy: boolean
+  /** Show the full description instead of the two-line clamp. */
+  expanded: boolean
+  onToggleExpanded: () => void
   onToggle: (enabled: boolean) => void
 }
 
-export function SkillRow({ skill, agentName, showAgent, showUsage, flags, busy, onToggle }: Props) {
+export function SkillRow({ skill, agentName, showAgent, showUsage, flags, busy, expanded, onToggleExpanded, onToggle }: Props) {
   const disabled = skill.state === 'disabled'
   const scope = skill.projectRoot ? basename(skill.projectRoot) : 'global'
   const shownPath = disabled && skill.quarantinePath ? skill.quarantinePath : skill.path
+  const [descRef, truncated] = useTruncated(skill.description, expanded)
   return (
     <tr className={`row${disabled ? ' is-disabled' : ''}`}>
       <td className="cell-name">
@@ -31,10 +36,23 @@ export function SkillRow({ skill, agentName, showAgent, showUsage, flags, busy, 
           {shownPath}
         </span>
       </td>
-      <td className="cell-desc" title={skill.description}>
-        <div className="desc-clamp">
+      <td className="cell-desc" title={expanded ? undefined : skill.description}>
+        <div ref={descRef} className={expanded ? 'desc-full' : 'desc-clamp'}>
           {skill.description || <span style={{ color: 'var(--ink-faint)' }}>No description</span>}
         </div>
+        {(expanded || truncated) && (
+          <button
+            type="button"
+            className="link desc-more"
+            aria-expanded={expanded}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleExpanded()
+            }}
+          >
+            {expanded ? 'less' : 'more'}
+          </button>
+        )}
       </td>
       <td className="cell-num">{skill.version || '–'}</td>
       {showAgent && <td>{agentName}</td>}
@@ -64,6 +82,23 @@ export function SkillRow({ skill, agentName, showAgent, showUsage, flags, busy, 
       </td>
     </tr>
   )
+}
+
+/** Whether the clamped description overflows its box; re-measured on resize and text change. */
+function useTruncated(text: string, expanded: boolean): [RefObject<HTMLDivElement | null>, boolean] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [value, setValue] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || expanded) return
+    const measure = () => setValue(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [text, expanded])
+  return [ref, value]
 }
 
 function basename(p: string): string {

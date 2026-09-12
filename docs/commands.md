@@ -11,8 +11,11 @@ skillman enable  <skill> --agent <id> [--project <path>]
 skillman disable <skill> --agent <id> [--project <path>]
 skillman agents [--json]
 skillman agent enable|disable <id>        # hide an agent from scans; no files touched
-skillman project add|list|remove <path>
+skillman project add <path> [--create-skills-dir]
+skillman project list|remove <path|id>
 ```
+
+`project add` requires a folder with a `.git` entry or a per-project skills dir; `--create-skills-dir` creates `.agents/skills` in a plain folder and registers it anyway.
 
 `disable` moves the skill folder to the quarantine directory inside the data directory; `enable` moves it back. No skill files are ever deleted.
 

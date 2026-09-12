@@ -18,7 +18,7 @@ type Props = {
   projects: Project[]
   selectedProject: string | null
   onSelectProject: (root: string | null) => void
-  onAddProject: (root: string) => Promise<void>
+  onAddProject: (root: string, opts?: { createSkillsDir?: boolean }) => Promise<void>
   onRemoveProject: (project: Project) => Promise<void>
   sort: SkillSort
   onSort: (s: SkillSort) => void

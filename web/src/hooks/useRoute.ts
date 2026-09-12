@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { ALL_AGENTS, VIEW_DISCOVER, VIEW_SETTINGS, VIEW_VAULT } from '../components/organisms/Sidebar'
+import { ALL_AGENTS, VIEW_DISCOVER, VIEW_DOCTOR, VIEW_SETTINGS, VIEW_VAULT } from '../components/organisms/Sidebar'
 
 const viewPaths: Record<string, string> = {
   [VIEW_VAULT]: '/vault',
   [VIEW_DISCOVER]: '/discover',
+  [VIEW_DOCTOR]: '/doctor',
   [VIEW_SETTINGS]: '/settings',
 }
 

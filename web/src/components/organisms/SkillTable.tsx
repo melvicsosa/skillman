@@ -1,6 +1,8 @@
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Skill } from '../../api/client'
 import { SkillRow, type RowFlags } from '../molecules/SkillRow'
 import { EmptyState } from '../molecules/EmptyState'
+import { useColumnWidths, type ColumnDef } from '../../hooks/useColumnWidths'
 
 type Props = {
   skills: Skill[]
@@ -15,7 +17,38 @@ type Props = {
   emptyHint: string
 }
 
+const WIDTHS_KEY = 'skillman.skills.columns.v1'
+
+type Column = ColumnDef & { label: string; title?: string }
+
+const ALL_COLUMNS: Column[] = [
+  { key: 'name', label: 'Name', width: 240, min: 160 },
+  { key: 'desc', label: 'Description', width: 0, min: 160, fill: true },
+  { key: 'version', label: 'Version', width: 84 },
+  { key: 'agent', label: 'Agent', width: 120 },
+  { key: 'scope', label: 'Scope', width: 110 },
+  { key: 'used', label: 'Used', width: 96, title: 'Times Claude Code invoked the skill' },
+  { key: 'flags', label: 'Flags', width: 150 },
+  { key: 'state', label: 'State', width: 80 },
+]
+
 export function SkillTable({ skills, agentNames, showAgent, showUsage, flagsFor, busySkill, onToggle, emptyTitle, emptyHint }: Props) {
+  const tableRef = useRef<HTMLTableElement>(null)
+  const columns = useMemo(
+    () => ALL_COLUMNS.filter((c) => (c.key === 'agent' ? showAgent : c.key === 'used' ? showUsage : true)),
+    [showAgent, showUsage],
+  )
+  const { widths, resizing, handleProps } = useColumnWidths(columns, WIDTHS_KEY, tableRef)
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const toggleExpanded = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
   if (skills.length === 0) {
     return (
       <div className="table-wrap">
@@ -25,27 +58,29 @@ export function SkillTable({ skills, agentNames, showAgent, showUsage, flagsFor,
   }
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table ref={tableRef} className={`table table-skills${resizing ? ' is-resizing' : ''}`}>
         <colgroup>
-          <col className="col-name" />
-          <col />
-          <col className="col-version" />
-          {showAgent && <col className="col-agent" />}
-          <col className="col-scope" />
-          {showUsage && <col className="col-used" />}
-          <col className="col-flags" />
-          <col className="col-state" />
+          {columns.map((c) => (
+            <col key={c.key} style={widths[c.key] !== undefined ? { width: widths[c.key] } : undefined} />
+          ))}
         </colgroup>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Version</th>
-            {showAgent && <th>Agent</th>}
-            <th>Scope</th>
-            {showUsage && <th title="Times Claude Code invoked the skill">Used</th>}
-            <th>Flags</th>
-            <th>State</th>
+            {columns.map((c, i) => (
+              <th key={c.key} title={c.title}>
+                {c.label}
+                {i < columns.length - 1 && (
+                  <span
+                    className={`col-resizer${resizing === c.key ? ' is-active' : ''}`}
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label={`Resize ${c.label} column`}
+                    title="Drag to resize, double-click to reset"
+                    {...handleProps(c.key)}
+                  />
+                )}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -58,6 +93,8 @@ export function SkillTable({ skills, agentNames, showAgent, showUsage, flagsFor,
               showUsage={showUsage}
               flags={flagsFor(s.id)}
               busy={busySkill === s.id}
+              expanded={expanded.has(s.id)}
+              onToggleExpanded={() => toggleExpanded(s.id)}
               onToggle={(enabled) => onToggle(s, enabled)}
             />
           ))}

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type IconName = 'vault' | 'discover' | 'settings' | 'sun' | 'moon' | 'check' | 'chevron' | 'plus' | 'close' | 'folder'
+export type IconName = 'vault' | 'discover' | 'doctor' | 'settings' | 'sun' | 'moon' | 'check' | 'chevron' | 'plus' | 'close' | 'folder'
 
 const paths: Record<IconName, ReactNode> = {
   vault: (
@@ -14,6 +14,12 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <circle cx="8" cy="8" r="6" />
       <path d="m10.5 5.5-1.5 3.5-3.5 1.5 1.5-3.5z" />
+    </>
+  ),
+  doctor: (
+    <>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M4.25 8h1.75l1-2.25 2 4.5 1-2.25h1.75" />
     </>
   ),
   settings: (

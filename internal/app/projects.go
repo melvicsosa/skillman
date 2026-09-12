@@ -11,10 +11,18 @@ import (
 	"github.com/melvicsosa/skillman/internal/domain"
 )
 
+// RegisterProjectOptions tunes RegisterProject.
+type RegisterProjectOptions struct {
+	// CreateSkillsDir creates SharedProjectDir inside a root that has neither
+	// .git nor a per-project skills dir instead of rejecting it.
+	CreateSkillsDir bool
+}
+
 // RegisterProject records root as a project and scans it. The root must be
 // an existing directory containing a .git entry or at least one per-project
-// skills dir of any supported agent.
-func (s *Service) RegisterProject(ctx context.Context, root string) (domain.Project, ScanSummary, error) {
+// skills dir of any supported agent; otherwise it fails with
+// domain.ErrNotAProject unless opts.CreateSkillsDir is set.
+func (s *Service) RegisterProject(ctx context.Context, root string, opts RegisterProjectOptions) (domain.Project, ScanSummary, error) {
 	abs, err := cleanRoot(root)
 	if err != nil {
 		return domain.Project{}, ScanSummary{}, err
@@ -27,7 +35,12 @@ func (s *Service) RegisterProject(ctx context.Context, root string) (domain.Proj
 		return domain.Project{}, ScanSummary{}, fmt.Errorf("project root %s is not a directory", abs)
 	}
 	if !s.looksLikeProject(abs) {
-		return domain.Project{}, ScanSummary{}, fmt.Errorf("%s has neither .git nor a per-project skills dir (%v)", abs, s.projectDirNames())
+		if !opts.CreateSkillsDir {
+			return domain.Project{}, ScanSummary{}, fmt.Errorf("%w: %s has neither .git nor a per-project skills dir (%v)", domain.ErrNotAProject, abs, s.projectDirNames())
+		}
+		if err := os.MkdirAll(filepath.Join(abs, filepath.FromSlash(SharedProjectDir)), 0o755); err != nil {
+			return domain.Project{}, ScanSummary{}, fmt.Errorf("create %s: %w", SharedProjectDir, err)
+		}
 	}
 	p, err := s.projects.Add(ctx, domain.Project{Root: abs, Name: filepath.Base(abs)})
 	if err != nil {

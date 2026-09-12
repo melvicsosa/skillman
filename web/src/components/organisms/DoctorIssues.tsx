@@ -3,8 +3,9 @@ import { useState } from 'react'
 import type { DoctorReport, DriftCopy, Issue } from '../../api/client'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
-import { Spinner } from '../atoms/Spinner'
+import { EmptyState } from '../molecules/EmptyState'
 import { Select } from '../molecules/Select'
+import { Spinner } from '../atoms/Spinner'
 
 type Props = {
   report: DoctorReport | null
@@ -16,12 +17,16 @@ type Props = {
   onAdopt: (issue: Issue, from: string) => Promise<void>
 }
 
+/** Every kind internal/app/doctor.go can emit; unknown kinds fall back to the raw id. */
 const kindLabel: Record<string, string> = {
   'invalid-frontmatter': 'Invalid frontmatter',
   'dangling-symlink': 'Dangling symlinks',
   drift: 'Drift between copies',
   'quarantine-conflict': 'Quarantine conflicts',
   'scan-error': 'Scan errors',
+  'vault-broken-link': 'Broken vault links',
+  'vault-missing': 'Missing vault entries',
+  'rejected-conversion': 'Rejected conversions',
 }
 
 const kindTone: Record<string, 'warn' | 'danger' | 'info' | 'neutral'> = {
@@ -30,45 +35,52 @@ const kindTone: Record<string, 'warn' | 'danger' | 'info' | 'neutral'> = {
   drift: 'warn',
   'quarantine-conflict': 'warn',
   'scan-error': 'danger',
+  'vault-broken-link': 'danger',
+  'vault-missing': 'warn',
+  'rejected-conversion': 'info',
 }
 
-export function DoctorPanel({ report, error, loading, onRepair, onAdopt }: Props) {
+/** Doctor report body grouped by kind, with drift repair/adopt controls. */
+export function DoctorIssues({ report, error, loading, onRepair, onAdopt }: Props) {
   const total = report?.issues.length ?? 0
   const kinds = report ? Object.keys(report.counts).sort() : []
-  return (
-    <details className="doctor">
-      <summary>
-        <span className="doctor-title">Doctor</span>
-        {loading && !report && <span style={{ color: 'var(--ink-faint)' }}>checking…</span>}
-        {error && <Badge tone="danger">{error}</Badge>}
-        {report && total === 0 && <Badge>no issues</Badge>}
-        {report && total > 0 && (
-          <span className="doctor-counts">
-            {kinds.map((k) => (
-              <Badge key={k} tone={kindTone[k] ?? 'neutral'}>{`${kindLabel[k] ?? k}: ${report.counts[k]}`}</Badge>
-            ))}
-          </span>
-        )}
-      </summary>
-      <div className="doctor-body">
-        {report && total === 0 && <p style={{ color: 'var(--ink-muted)' }}>Every skill parses, every symlink resolves, and every copy of each skill matches.</p>}
-        {report &&
-          kinds.map((k) => (
-            <div className="doctor-group" key={k}>
-              <h4>
-                {kindLabel[k] ?? k} ({report.counts[k]})
-              </h4>
-              <ul>
-                {report.issues
-                  .filter((i) => i.kind === k)
-                  .map((i, idx) => (
-                    <IssueItem key={`${k}-${idx}`} issue={i} onRepair={onRepair} onAdopt={onAdopt} />
-                  ))}
-              </ul>
-            </div>
-          ))}
+
+  if (error) {
+    return (
+      <div className="state-box is-error">
+        <h3>Could not run doctor</h3>
+        <p>{error}</p>
       </div>
-    </details>
+    )
+  }
+  if (loading && !report) return <div className="state-box">Checking…</div>
+  if (!report) return null
+  if (total === 0) {
+    return <EmptyState title="No issues found" hint="Every skill parses, every symlink resolves, and every copy of each skill matches." />
+  }
+
+  return (
+    <div className="doctor-issues">
+      <div className="doctor-counts">
+        {kinds.map((k) => (
+          <Badge key={k} tone={kindTone[k] ?? 'neutral'}>{`${kindLabel[k] ?? k}: ${report.counts[k]}`}</Badge>
+        ))}
+      </div>
+      {kinds.map((k) => (
+        <div className="doctor-group" key={k}>
+          <h4>
+            {kindLabel[k] ?? k} ({report.counts[k]})
+          </h4>
+          <ul>
+            {report.issues
+              .filter((i) => i.kind === k)
+              .map((i, idx) => (
+                <IssueItem key={`${k}-${idx}`} issue={i} onRepair={onRepair} onAdopt={onAdopt} />
+              ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   )
 }
 

@@ -21,6 +21,9 @@ var (
 	ErrUnsupported = errors.New("unsupported")
 	// ErrCanceled is returned when the user dismisses an interactive prompt.
 	ErrCanceled = errors.New("canceled")
+	// ErrNotAProject is returned when a root has neither .git nor a
+	// per-project skills dir and the caller did not ask to create one.
+	ErrNotAProject = errors.New("not a project")
 )
 
 // FolderPicker asks the user to choose a folder through a native dialog.
