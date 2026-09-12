@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { api, type DoctorReport, type Issue } from '../api/client'
 import { Button } from '../components/atoms/Button'
 import { Spinner } from '../components/atoms/Spinner'
 import { ThemeToggle } from '../components/molecules/ThemeToggle'
+import { DoctorHelp } from '../components/organisms/DoctorHelp'
 import { DoctorIssues } from '../components/organisms/DoctorIssues'
 import type { ApiState } from '../hooks/useApi'
+import { applyDoctorFilters, useDoctorFilters } from '../hooks/useDoctorFilters'
 import { errMsg, type ToastFn } from '../hooks/useToast'
 
 type Props = {
@@ -18,6 +20,10 @@ type Props = {
 export function DoctorPage({ doctor, toast, refreshAll }: Props) {
   const [checkedAt, setCheckedAt] = useState<Date | null>(null)
   const total = doctor.data?.issues.length ?? 0
+  const filters = useDoctorFilters()
+  const issues = doctor.data?.issues
+  const view = useMemo(() => applyDoctorFilters(issues ?? [], filters.filters), [issues, filters.filters])
+  const shown = view.visible.length
 
   const onRun = async () => {
     await doctor.reload()
@@ -52,7 +58,7 @@ export function DoctorPage({ doctor, toast, refreshAll }: Props) {
   }
 
   const subtitle = doctor.data
-    ? `${total === 0 ? 'No issues' : `${total} ${total === 1 ? 'issue' : 'issues'}`}${checkedAt ? ` · checked ${checkedAt.toLocaleTimeString()}` : ''}`
+    ? `${total === 0 ? 'No issues' : `${total} ${total === 1 ? 'issue' : 'issues'}`}${total > 0 && shown < total ? ` · ${shown} shown` : ''}${checkedAt ? ` · checked ${checkedAt.toLocaleTimeString()}` : ''}`
     : doctor.loading
       ? 'Checking…'
       : ''
@@ -70,7 +76,18 @@ export function DoctorPage({ doctor, toast, refreshAll }: Props) {
         <ThemeToggle />
       </header>
       <div className="content doctor-page">
-        <DoctorIssues report={doctor.data} error={doctor.error} loading={doctor.loading} onRepair={onRepair} onAdopt={onAdopt} />
+        <div className="doctor-main">
+          <DoctorIssues
+            report={doctor.data}
+            error={doctor.error}
+            loading={doctor.loading}
+            filters={filters}
+            view={view}
+            onRepair={onRepair}
+            onAdopt={onAdopt}
+          />
+        </div>
+        <DoctorHelp />
       </div>
     </>
   )
