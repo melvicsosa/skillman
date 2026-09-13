@@ -1,0 +1,10 @@
+title: skillman
+description: One place to see, switch and share the skills of every AI coding agent on your machine.
+theme: jekyll-theme-minimal
+logo: https://raw.githubusercontent.com/melvicsosa/skillman/main/assets/brand/icon.png
+show_downloads: false
+exclude:
+  - drafts
+  - COMO-FUNCIONA.md
+  - CONCEPTOS.md
+  - POSICIONAMIENTO.md
