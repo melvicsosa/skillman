@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest a change or an addition to skillman.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a new agent, use the **Agent support request** template instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution. What do you do today and where does it break down?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What skillman should do. A CLI example or a sketch of the UI helps.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - Web UI
+        - Vault / sync
+        - Doctor / drift
+        - Discover / registries
+        - Service / menu bar app
+        - Other
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Other ways to get the same result, and why they do not fit.

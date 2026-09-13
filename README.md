@@ -21,12 +21,15 @@ skillman scan                          # 2. discover the skills on disk
 skillman serve                         # 3. open the UI on http://localhost:3010
 ```
 
+<p align="center"><img src="assets/demo.gif" width="900" alt="skillman CLI demo: scan, list, disable a skill, doctor"></p>
+
 <p align="center"><img src="assets/screenshot-skills.png" width="900" alt="skillman Skills view"></p>
 
 <details>
 <summary><b>Table of contents</b></summary>
 
 - [What is skillman?](#what-is-skillman)
+- [Why not just copy folders?](#why-not-just-copy-folders)
 - [What you get](#what-you-get)
 - [Which agents it works with](#which-agents-it-works-with)
 - [Install](#install)
@@ -61,6 +64,25 @@ Every AI coding agent keeps its own skills folder. None of them can switch a sin
 
 > [!IMPORTANT]
 > skillman **never installs an agent** and **never deletes skill files**. Disabling a skill moves its folder to a quarantine directory inside `~/.skillman`; enabling it moves the folder back.
+
+<div align="right"><a href="#top">Back to top</a></div>
+
+<div align="center"><img src="assets/brand/icon.png" width="28" alt="" /></div>
+
+## Why not just copy folders?
+
+Copying a skill into each agent works until you have more than a few of them. Here is how the usual options compare once you run several agents.
+
+| | Copy folders by hand | `npx skills` (skills.sh CLI) | Each agent's own plugins | skillman |
+| --- | --- | --- | --- | --- |
+| See every skill you have, per agent | No | No | Partial | Yes |
+| Turn a skill off without deleting it | No | No | Partial | Yes |
+| One copy shared across agents (vault) | No | No | No | Yes |
+| Detect copies that drifted apart | No | No | No | Yes |
+| Install from skills.sh / GitHub / Claude marketplaces | No | Yes | Partial | Yes |
+| Works across agents | Partial | Partial | No | Yes |
+
+`npx skills` installs from skills.sh into several agents, but stops there: no list, no switch, no shared copy. Agent plugin systems manage skills well inside one agent and do not know about the others.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -117,6 +139,15 @@ Every AI coding agent keeps its own skills folder. None of them can switch a sin
 brew install melvicsosa/tap/skillman                              # Homebrew, macOS and Linux
 go install github.com/melvicsosa/skillman/cmd/skillman@latest    # from source, Go 1.26+
 skillman version                                                 # expected: prints a version number
+```
+
+**Linux without Homebrew**: download the release tarball for your architecture and put the binary on your `PATH`.
+
+```sh
+TAG=$(curl -s https://api.github.com/repos/melvicsosa/skillman/releases/latest | grep tag_name | cut -d '"' -f 4)
+ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+curl -sL "https://github.com/melvicsosa/skillman/releases/download/${TAG}/skillman_${TAG#v}_linux_${ARCH}.tar.gz" | tar xz skillman
+sudo mv skillman /usr/local/bin/
 ```
 
 | Platform | CLI and `serve` | `service` | Menu bar app |

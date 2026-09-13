@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/melvicsosa/skillman/tree/main/docs
+    about: Command reference and the full list of agent paths.

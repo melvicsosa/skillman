@@ -1,0 +1,85 @@
+name: Bug report
+description: Something in skillman does not behave as documented.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill in as much as you can; the version and agent details are what usually let us reproduce a problem.
+  - type: input
+    id: version
+    attributes:
+      label: skillman version
+      description: Paste the output of `skillman version`.
+      placeholder: "skillman v0.7.1 (abc1234, 2026-09-12)"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: OS and version, plus the CPU architecture if you know it.
+      placeholder: "macOS 15.6 (arm64) / Ubuntu 24.04 (amd64)"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install skillman?
+      options:
+        - Homebrew
+        - go install
+        - Release tarball
+        - Built from source
+    validations:
+      required: true
+  - type: checkboxes
+    id: agents
+    attributes:
+      label: Agents involved
+      description: Tick every agent that is part of the problem.
+      options:
+        - label: Claude Code
+        - label: Claude plugins
+        - label: Codex
+        - label: Cursor
+        - label: Gemini CLI
+        - label: Antigravity
+        - label: OpenCode
+        - label: Other (say which in the description)
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or UI actions, in order.
+      placeholder: |
+        1. skillman scan
+        2. skillman disable my-skill --agent codex
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include the error message or a screenshot of the UI if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: skillman doctor output
+      description: If the problem involves the vault, drift, symlinks or a skill that looks wrong, paste the output of `skillman doctor`. Remove anything private.
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Logs from `~/.skillman/logs/`, whether the service or menu bar app is running, anything unusual about your setup.

@@ -1,0 +1,54 @@
+name: Agent support request
+description: Ask for an AI coding agent that skillman does not detect yet.
+title: "agent: "
+labels: ["agent-support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        skillman supports an agent by knowing where it reads skills from. If you tell us the folders, adding it is usually a small change. See [CONTRIBUTING.md](https://github.com/melvicsosa/skillman/blob/main/CONTRIBUTING.md#adding-support-for-a-new-agent) if you would rather send a pull request.
+  - type: input
+    id: name
+    attributes:
+      label: Agent name
+      placeholder: "Windsurf"
+    validations:
+      required: true
+  - type: input
+    id: global_dir
+    attributes:
+      label: Global skills directory
+      description: Where the agent reads user-wide skills from. Use `~` for the home directory.
+      placeholder: "~/.windsurf/skills"
+    validations:
+      required: true
+  - type: input
+    id: project_dir
+    attributes:
+      label: Project skills directory
+      description: The path relative to a project root, if the agent supports per-project skills.
+      placeholder: ".windsurf/skills"
+  - type: input
+    id: docs
+    attributes:
+      label: Link to the agent's documentation on skills
+      description: The page that describes the skill format and where skills are loaded from.
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Skill format
+      description: Does the agent use the same `SKILL.md` folder layout as Claude Code and skills.sh?
+      options:
+        - Same SKILL.md layout
+        - Different layout (describe below)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Extra search paths, read-only locations, platform differences, or how you verified the paths.
