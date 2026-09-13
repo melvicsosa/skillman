@@ -79,7 +79,7 @@ skillman version
 
 `skillman service install` writes a launchd LaunchAgent that runs `skillman serve --no-open` at login and restarts it on failure. On Linux and Windows, `service` reports unsupported.
 
-The UI has four views: Skills, Vault, Discover and Settings. Deep links `/`, `/agent/<id>`, `/vault`, `/discover` and `/settings` open the matching view.
+The UI has five views: Skills, Vault, Discover, Doctor and Settings. Deep links `/`, `/agent/<id>`, `/vault`, `/discover`, `/doctor` and `/settings` open the matching view.
 
 ### Tokens
 
